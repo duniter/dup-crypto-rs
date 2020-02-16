@@ -27,13 +27,17 @@ use crate::rand::UnspecifiedRandError;
 use crate::seeds::Seed32;
 use base64;
 use ring::signature::{Ed25519KeyPair as RingKeyPair, KeyPair, UnparsedPublicKey, ED25519};
-use serde::de::{Deserializer, Error, SeqAccess, Visitor};
-use serde::ser::{SerializeTuple, Serializer};
-use serde::{Deserialize, Serialize};
+#[cfg(feature = "ser")]
+use serde::{
+    de::{Deserializer, Error, SeqAccess, Visitor},
+    ser::{SerializeTuple, Serializer},
+    Deserialize, Serialize,
+};
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
+#[cfg(feature = "ser")]
 use std::marker::PhantomData;
 use unwrap::unwrap;
 use zeroize::Zeroize;
@@ -55,6 +59,7 @@ impl Hash for Signature {
     }
 }
 
+#[cfg(feature = "ser")]
 impl Serialize for Signature {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -68,6 +73,7 @@ impl Serialize for Signature {
     }
 }
 
+#[cfg(feature = "ser")]
 impl<'de> Deserialize<'de> for Signature {
     fn deserialize<D>(deserializer: D) -> Result<Signature, D::Error>
     where
@@ -150,7 +156,8 @@ impl Eq for Signature {}
 /// Can be generated with [`KeyPairGenerator`].
 ///
 /// [`KeyPairGenerator`]: struct.KeyPairGenerator.html
-#[derive(Copy, Clone, Deserialize, PartialEq, Eq, Hash, Serialize)]
+#[cfg_attr(feature = "ser", derive(Deserialize, Serialize))]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct PublicKey {
     datas: [u8; 32],
     len: usize,
@@ -410,9 +417,12 @@ impl KeyPairFromSaltedPasswordGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "ser")]
     use crate::keys::{KeyPair, Sig, Signator, Signature};
     use crate::seeds::Seed32;
+    #[cfg(feature = "ser")]
     use bincode;
+    #[cfg(feature = "ser")]
     use std::collections::hash_map::DefaultHasher;
 
     #[test]
@@ -533,6 +543,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "ser")]
     fn base64_signature() {
         let signature64 = "1eubHHbuNfilHMM0G2bI30iZzebQ2cQ1PC7uPAw08FG\
                            MMmQCRerlF/3pc4sAcsnexsxBseA/3lY03KlONqJBAg==";
@@ -618,6 +629,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "ser")]
     fn message_sign_verify() {
         let seed = unwrap!(Seed32::from_base58(
             "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV"
@@ -689,6 +701,7 @@ Timestamp: 0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
     }
 
     #[test]
+    #[cfg(feature = "ser")]
     fn keypair_generate_sign_and_verify() {
         let keypair = KeyPairFromSaltedPasswordGenerator::with_default_parameters().generate(
             SaltedPassword::new("password".to_owned(), "salt".to_owned()),

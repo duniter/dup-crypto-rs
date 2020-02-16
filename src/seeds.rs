@@ -19,12 +19,14 @@ use crate::bases::b58::{bytes_to_str_base58, ToBase58};
 use crate::bases::*;
 use crate::rand::UnspecifiedRandError;
 use ring::rand;
+#[cfg(feature = "ser")]
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Debug, Display, Formatter};
 use zeroize::Zeroize;
 
 /// Store a 32 bytes seed used to generate keys.
-#[derive(Clone, Default, Deserialize, PartialEq, Eq, Hash, Serialize, Zeroize)]
+#[cfg_attr(feature = "ser", derive(Deserialize, Serialize))]
+#[derive(Clone, Default, PartialEq, Eq, Hash, Zeroize)]
 #[zeroize(drop)]
 pub struct Seed32([u8; 32]);
 
