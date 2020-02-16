@@ -27,7 +27,6 @@ tests:linux64:stable:
   tags:
     - redshift-docker-runner
   script: 
-    - cd cli
     - RUSTFLAGS="-D warnings" cargo build
     - cargo test --all
 
