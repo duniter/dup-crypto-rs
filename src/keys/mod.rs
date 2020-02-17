@@ -37,7 +37,7 @@
 //!
 //! let signature = signator.sign(&message.as_bytes());
 //!
-//! assert!(keypair.pubkey.verify(&message.as_bytes(), &signature).is_ok());
+//! assert!(keypair.pubkey().verify(&message.as_bytes(), &signature).is_ok());
 //! ```
 //!
 //! # Format
@@ -391,7 +391,7 @@ impl Display for KeyPairEnum {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match self {
             KeyPairEnum::Ed25519(ref ed25519_keypair) => {
-                write!(f, "({}, hidden)", ed25519_keypair.pubkey.to_base58())
+                write!(f, "({}, hidden)", ed25519_keypair.pubkey().to_base58())
             }
             KeyPairEnum::Schnorr() => panic!("Schnorr algo not yet supported !"),
         }
@@ -584,10 +584,9 @@ mod tests {
             format!("{}", false_key_pair)
         );
         assert_eq!(
-            PubKey::Ed25519(false_key_pair_ed25519.pubkey),
+            PubKey::Ed25519(false_key_pair_ed25519.pubkey()),
             false_key_pair.public_key()
         );
-        assert_eq!(false_key_pair_ed25519.seed, false_key_pair.seed().clone());
         assert_eq!(
             Err(SigError::InvalidSig),
             false_key_pair.verify(

@@ -272,9 +272,20 @@ impl super::Signator for Signator {
 #[derive(Debug, Clone, Eq)]
 pub struct Ed25519KeyPair {
     /// Store a Ed25519 public key.
-    pub pubkey: PublicKey,
+    pubkey: PublicKey,
     /// Store a seed of 32 bytes.
-    pub seed: Seed32,
+    seed: Seed32,
+}
+
+impl Ed25519KeyPair {
+    /// Generate random keypair
+    pub fn generate_random() -> Result<Self, UnspecifiedRandError> {
+        Ok(KeyPairFromSeed32Generator::generate(Seed32::random()?))
+    }
+    /// Get public key
+    pub fn pubkey(&self) -> PublicKey {
+        self.pubkey
+    }
 }
 
 impl Display for Ed25519KeyPair {
@@ -313,13 +324,6 @@ impl super::KeyPair for Ed25519KeyPair {
         signature: &<Self::Signator as super::Signator>::Signature,
     ) -> Result<(), SigError> {
         self.public_key().verify(message, signature)
-    }
-}
-
-impl Ed25519KeyPair {
-    /// Generate random keypair
-    pub fn generate_random() -> Result<Self, UnspecifiedRandError> {
-        Ok(KeyPairFromSeed32Generator::generate(Seed32::random()?))
     }
 }
 
