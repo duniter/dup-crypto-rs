@@ -162,7 +162,7 @@ impl Sig {
     /// Get Sig size in bytes
     pub fn size_in_bytes(&self) -> usize {
         match *self {
-            Sig::Ed25519(_) => *ed25519::SIG_SIZE_IN_BYTES + 2,
+            Sig::Ed25519(_) => ed25519::SIG_SIZE_IN_BYTES + 2,
             Sig::Schnorr() => panic!("Schnorr algo not yet supported !"),
         }
     }
@@ -494,7 +494,7 @@ mod tests {
         let sig_str_b64 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==".to_owned();
         let sig = Sig::Ed25519(ed25519::Signature(sig_bytes));
 
-        assert_eq!(sig.size_in_bytes(), *ed25519::SIG_SIZE_IN_BYTES + 2);
+        assert_eq!(sig.size_in_bytes(), ed25519::SIG_SIZE_IN_BYTES + 2);
         assert_eq!(sig_str_b64, format!("{}", sig));
 
         assert_eq!(KeysAlgo::Ed25519, sig.algo());
@@ -521,7 +521,7 @@ mod tests {
             PubKey::from_str(&pubkey_str_b58).expect("Fail to parse pubkey !")
         );
 
-        assert_eq!(pubkey.size_in_bytes(), *ed25519::PUBKEY_SIZE_IN_BYTES + 3);
+        assert_eq!(pubkey.size_in_bytes(), ed25519::PUBKEY_SIZE_IN_BYTES + 3);
         assert_eq!(pubkey_str_b58, format!("{}", pubkey));
 
         assert_eq!(KeysAlgo::Ed25519, pubkey.algo());
@@ -720,14 +720,14 @@ mod tests {
     fn pubkey_from_bytes() {
         assert_eq!(
             Err(PubkeyFromBytesError::InvalidBytesLen {
-                expected: *ed25519::PUBKEY_SIZE_IN_BYTES,
+                expected: ed25519::PUBKEY_SIZE_IN_BYTES,
                 found: 2,
             }),
             PubKey::from_bytes(&[0u8, 1]),
         );
         assert_eq!(
             Err(PubkeyFromBytesError::InvalidBytesLen {
-                expected: *ed25519::PUBKEY_SIZE_IN_BYTES,
+                expected: ed25519::PUBKEY_SIZE_IN_BYTES,
                 found: 33,
             }),
             PubKey::from_bytes(&[
