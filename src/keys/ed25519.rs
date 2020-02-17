@@ -513,8 +513,8 @@ mod tests {
         );
 
         // Test pubkey with 43 characters
-        let pubkey43 =
-            super::PublicKey::from_base58("2nV7Dv4nhTJ9dZUvRJpL34vFP9b2BkDjKWv9iBW2JaR").unwrap();
+        let pubkey43 = super::PublicKey::from_base58("2nV7Dv4nhTJ9dZUvRJpL34vFP9b2BkDjKWv9iBW2JaR")
+            .expect("invalid pubkey");
         println!("pubkey43={:?}", pubkey43.as_ref());
         assert_eq!(
             format!("{:?}", pubkey43),
@@ -575,7 +575,7 @@ mod tests {
         signature.hash(&mut hasher);
         let hash1 = hasher.finish();
         let mut hasher = DefaultHasher::new();
-        let signature_copy = signature.clone();
+        let signature_copy = signature;
         signature_copy.hash(&mut hasher);
         let hash2 = hasher.finish();
         assert_eq!(hash1, hash2);
