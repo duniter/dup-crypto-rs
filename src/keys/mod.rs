@@ -31,7 +31,7 @@
 //!     "password".to_owned(),
 //! ));
 //!
-//! let signator = keypair.generate_signator().expect("keypair corrupted");
+//! let signator = keypair.generate_signator();
 //!
 //! let message = "Hello, world!";
 //!
@@ -339,7 +339,7 @@ pub trait KeyPair: Clone + Display + Debug + PartialEq + Eq {
     type Signator: Signator;
 
     /// Generate signator.
-    fn generate_signator(&self) -> Result<Self::Signator, SignError>;
+    fn generate_signator(&self) -> Self::Signator;
 
     /// Get `PublicKey`
     fn public_key(&self) -> <Self::Signator as Signator>::PublicKey;
@@ -401,10 +401,10 @@ impl Display for KeyPairEnum {
 impl KeyPair for KeyPairEnum {
     type Signator = SignatorEnum;
 
-    fn generate_signator(&self) -> Result<Self::Signator, SignError> {
+    fn generate_signator(&self) -> Self::Signator {
         match self {
             KeyPairEnum::Ed25519(ref ed25519_keypair) => {
-                Ok(SignatorEnum::Ed25519(ed25519_keypair.generate_signator()?))
+                SignatorEnum::Ed25519(ed25519_keypair.generate_signator())
             }
             KeyPairEnum::Schnorr() => panic!("Schnorr algo not yet supported !"),
         }

@@ -303,11 +303,8 @@ impl PartialEq<Ed25519KeyPair> for Ed25519KeyPair {
 impl super::KeyPair for Ed25519KeyPair {
     type Signator = Signator;
 
-    fn generate_signator(&self) -> Result<Self::Signator, super::SignError> {
-        Ok(Signator(
-            RingKeyPair::from_seed_and_public_key(self.seed.as_ref(), self.pubkey.as_ref())
-                .map_err(|_| super::SignError::CorruptedKeyPair)?,
-        ))
+    fn generate_signator(&self) -> Self::Signator {
+        Signator(RingKeyPair::from_seed_unchecked(self.seed.as_ref()).expect("invalid seed"))
     }
 
     fn public_key(&self) -> PublicKey {
@@ -651,9 +648,7 @@ UniqueID: tic
 Timestamp: 0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
 ";
 
-        let signator = KeyPairFromSeed32Generator::generate(seed)
-            .generate_signator()
-            .expect("fail to generate signator !");
+        let signator = KeyPairFromSeed32Generator::generate(seed).generate_signator();
         let pubkey = signator.public_key();
         let sig = signator.sign(message.as_bytes());
         let wrong_sig = Signature([
@@ -719,10 +714,7 @@ UniqueID: tic
 Timestamp: 0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
 ";
 
-        let sig = keypair
-            .generate_signator()
-            .expect("fail to gen signator")
-            .sign(message.as_bytes());
+        let sig = keypair.generate_signator().sign(message.as_bytes());
         assert!(keypair.verify(message.as_bytes(), &sig).is_ok());
     }
 

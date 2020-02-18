@@ -126,11 +126,7 @@ mod tests {
             10, 11, 12, 13, 14, 15,
         ]));
 
-        let signator = SignatorEnum::Ed25519(
-            key_pair
-                .generate_signator()
-                .expect("fail to generate signator !"),
-        );
+        let signator = SignatorEnum::Ed25519(key_pair.generate_signator());
 
         let mut bin_signable_datas = BinSignableTestImpl {
             datas: vec![0, 1, 2, 3],

@@ -102,9 +102,7 @@ mod tests {
     fn test_text_signable() {
         let key_pair = super::super::tests::valid_key_pair_1();
 
-        let signator = key_pair
-            .generate_signator()
-            .expect("fail to generate signator");
+        let signator = key_pair.generate_signator();
 
         let mut text_signable = TextSignableTestImpl {
             issuer: key_pair.public_key(),
