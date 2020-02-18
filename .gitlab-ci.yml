@@ -28,7 +28,8 @@ tests:linux64:stable:
     - redshift-docker-runner
   script: 
     - RUSTFLAGS="-D warnings" cargo build
-    - cargo test --all
+    - cargo tarpaulin --ignore-tests -iv --out Xml
+    - bash <(curl -s https://codecov.io/bash)
 
 clippy:
   extends: .rust_stable_lin64
