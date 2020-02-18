@@ -1,7 +1,7 @@
 [package]
 name = "dup-crypto"
 version = "0.8.0"
-authors = ["nanocryk <nanocryk@duniter.org>", "elois <elois@duniter.org>"]
+authors = ["elois <c@elo.tf>"]
 description = "Manage cryptographic operations for DUPs (DUniter Protocols)."
 repository = "https://git.duniter.org/libs/dup-crypto-rs"
 readme = "README.md"
