@@ -29,6 +29,8 @@
 )]
 #![allow(non_camel_case_types)]
 
+#[cfg(feature = "aes256")]
+pub mod aes256;
 pub mod bases;
 pub mod hashs;
 pub mod keys;
