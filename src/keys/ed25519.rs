@@ -286,6 +286,9 @@ impl Ed25519KeyPair {
     pub fn pubkey(&self) -> PublicKey {
         self.pubkey
     }
+    pub(crate) fn seed(&self) -> &Seed32 {
+        &self.seed
+    }
 }
 
 impl Display for Ed25519KeyPair {

@@ -22,7 +22,6 @@
     missing_copy_implementations,
     trivial_casts,
     trivial_numeric_casts,
-    unsafe_code,
     unstable_features,
     unused_import_braces,
     unused_qualifications
@@ -32,6 +31,8 @@
 #[cfg(feature = "aes256")]
 pub mod aes256;
 pub mod bases;
+#[cfg(feature = "dewip")]
+pub mod dewip;
 pub mod hashs;
 pub mod keys;
 pub mod rand;
