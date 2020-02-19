@@ -25,6 +25,9 @@ use thiserror::Error;
 
 const MAX_KEYPAIRS_COUNT: usize = 2;
 
+type KeyPairsArray = ArrayVec<[KeyPairEnum; MAX_KEYPAIRS_COUNT]>;
+type KeyPairsIter = arrayvec::IntoIter<[KeyPairEnum; MAX_KEYPAIRS_COUNT]>;
+
 /// Error when try to read DEWIF file content
 #[derive(Clone, Debug, Error)]
 pub enum DewifReadError {
@@ -55,7 +58,7 @@ pub enum DewifReadError {
 pub fn read_dewif_file_content(
     file_content: &str,
     passphrase: &str,
-) -> Result<impl IntoIterator<Item = KeyPairEnum>, DewifReadError> {
+) -> Result<impl Iterator<Item = KeyPairEnum>, DewifReadError> {
     let mut bytes = base64::decode(file_content).map_err(DewifReadError::InvalidBase64Str)?;
 
     if bytes.len() < 4 {
@@ -66,9 +69,9 @@ pub fn read_dewif_file_content(
 
     match version {
         1 => Ok({
-            let mut array_keypairs = ArrayVec::new();
+            let mut array_keypairs = KeyPairsArray::new();
             array_keypairs.push(read_dewif_v1(&mut bytes[4..], passphrase)?);
-            array_keypairs
+            array_keypairs.into_iter()
         }),
         2 => read_dewif_v2(&mut bytes[4..], passphrase),
         other_version => Err(DewifReadError::UnsupportedVersion {
@@ -92,11 +95,8 @@ fn read_dewif_v1(bytes: &mut [u8], passphrase: &str) -> Result<KeyPairEnum, Dewi
     bytes_to_checked_keypair(bytes)
 }
 
-fn read_dewif_v2(
-    bytes: &mut [u8],
-    passphrase: &str,
-) -> Result<ArrayVec<[KeyPairEnum; MAX_KEYPAIRS_COUNT]>, DewifReadError> {
-    let mut array_keypairs = ArrayVec::new();
+fn read_dewif_v2(bytes: &mut [u8], passphrase: &str) -> Result<KeyPairsIter, DewifReadError> {
+    let mut array_keypairs = KeyPairsArray::new();
 
     match bytes.len() {
         len if len < super::V2_ENCRYPTED_BYTES_LEN => return Err(DewifReadError::TooShortContent),
@@ -111,7 +111,7 @@ fn read_dewif_v2(
     array_keypairs.push(bytes_to_checked_keypair(&bytes[..64])?);
     array_keypairs.push(bytes_to_checked_keypair(&bytes[64..])?);
 
-    Ok(array_keypairs)
+    Ok(array_keypairs.into_iter())
 }
 
 fn bytes_to_checked_keypair(bytes: &[u8]) -> Result<KeyPairEnum, DewifReadError> {
@@ -173,8 +173,7 @@ mod tests {
         // Read DEWIF file content
         // If the file content is correct, we get a key-pair iterator.
         let mut key_pair_iter = read_dewif_file_content(dewif_file_content, encryption_passphrase)
-            .expect("invalid DEWIF file.")
-            .into_iter();
+            .expect("invalid DEWIF file.");
 
         // Get first key-pair
         let key_pair = key_pair_iter

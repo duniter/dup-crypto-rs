@@ -54,8 +54,7 @@
 //! // Read DEWIF file content
 //! // If the file content is correct, we get a key-pair iterator.
 //! let mut key_pair_iter = read_dewif_file_content(dewif_file_content, encryption_passphrase)
-//!     .expect("invalid DEWIF file.")
-//!     .into_iter();
+//!     .expect("invalid DEWIF file.");
 //!
 //! // Get first key-pair
 //! let key_pair = key_pair_iter
@@ -138,8 +137,7 @@ mod tests {
         let dewif_content = write_dewif_v1_content(&written_keypair, "toto");
 
         let mut keypairs_iter = read_dewif_file_content(&dewif_content, "toto")
-            .expect("dewif content must be readed successfully")
-            .into_iter();
+            .expect("dewif content must be readed successfully");
         let keypair_read = keypairs_iter.next().expect("Must read one keypair");
 
         assert_eq!(KeyPairEnum::Ed25519(written_keypair), keypair_read,)
@@ -172,8 +170,7 @@ mod tests {
         let dewif_content = write_dewif_v2_content(&written_keypair1, &written_keypair2, "toto");
 
         let mut keypairs_iter = read_dewif_file_content(&dewif_content, "toto")
-            .expect("dewif content must be readed successfully")
-            .into_iter();
+            .expect("dewif content must be readed successfully");
         let keypair1_read = keypairs_iter.next().expect("Must read one keypair");
         let keypair2_read = keypairs_iter.next().expect("Must read one keypair");
 
