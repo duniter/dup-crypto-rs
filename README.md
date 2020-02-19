@@ -1,7 +1,10 @@
 # DUP Crypto
 
+[![ci](https://git.duniter.org/libs/dup-crypto-rs/badges/dev/pipeline.svg)](https://git.duniter.org/libs/dup-crypto-rs/pipelines)
 [![crates.io](https://img.shields.io/crates/v/dup-crypto.svg)](https://crates.io/crates/dup-crypto)
+[![docs](https://docs.rs/dup-crypto/badge.svg)](https://docs.rs/dup-crypto)
 [![codecov](https://codecov.io/gh/duniter/dup-crypto-rs/branch/dev/graph/badge.svg)](https://codecov.io/gh/duniter/dup-crypto-rs)
+[![dependency status](https://deps.rs/repo/github/duniter/dup-crypto-rs/status.svg)](https://deps.rs/repo/github/duniter/dup-crypto-rs)
 [![Minimum rustc version](https://img.shields.io/badge/rustc-1.41.0+-yellow.svg)](https://github.com/rust-lang/rust/blob/master/RELEASES.md)
 
 Manage cryptographic operations for DUniter Protocols and the Duniter eco-system most broadly.
