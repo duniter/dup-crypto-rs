@@ -53,8 +53,7 @@
 //!
 //! // Read DEWIF file content
 //! // If the file content is correct, we get a key-pair iterator.
-//! let mut key_pair_iter = read_dewif_file_content(dewif_file_content, encryption_passphrase)
-//!     .expect("invalid DEWIF file.");
+//! let mut key_pair_iter = read_dewif_file_content(dewif_file_content, encryption_passphrase)?;
 //!
 //! // Get first key-pair
 //! let key_pair = key_pair_iter
@@ -77,7 +76,8 @@
 //! assert_eq!(
 //!     "nCWl7jtCa/nCMKKnk2NJN7daVxd/ER+e1wsFbofdh/pUvDuHxFaa7S5eUMGiqPTJ4uJQOvrmF/BOfOsYIoI2Bg==",
 //!     &sig.to_string()
-//! )
+//! );
+//! # Ok::<(), dup_crypto::dewif::DewifReadError>(())
 //! ```
 //!
 
