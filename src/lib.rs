@@ -13,7 +13,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-//! Manage cryptographic operations.
+//! Manage cryptographic operations for DUniter Protocols and the Duniter eco-system most broadly.
+//!
+//! `dup` means DUniter Protocols.
+//!
 
 #![deny(
     clippy::option_unwrap_used,
