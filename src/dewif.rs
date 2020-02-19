@@ -13,12 +13,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-//! Handle [DEWIP](https://git.duniter.org/nodes/common/doc/blob/dewif/rfc/0013_Duniter_Encrypted_Wallet_Import_Format.md) format
+//! Handle [DEWIF](https://git.duniter.org/nodes/common/doc/blob/dewif/rfc/0013_Duniter_Encrypted_Wallet_Import_Format.md) format
 //!
 //! # Write ed25519 key-pair in DEWIF file
 //!
 //! ```
-//! use dup_crypto::dewip::write_dewif_v1_content;
+//! use dup_crypto::dewif::write_dewif_v1_content;
 //! use dup_crypto::keys::ed25519::{KeyPairFromSaltedPasswordGenerator, SaltedPassword};
 //!
 //! // Get user credentials (from cli prompt or gui)
@@ -42,18 +42,18 @@
 //! # Read DEWIF file
 //!
 //! ```
-//! use dup_crypto::dewip::read_dewip_file_content;
+//! use dup_crypto::dewif::read_dewif_file_content;
 //! use dup_crypto::keys::{KeyPair, Signator};
 //!
-//! // Get DEWIP file content (Usually from disk)
-//! let dewip_file_content = "AAAAATHfJ3vTvEPcXm22NwhJtnNdGuSjikpSYIMgX96Z9xVT0y8GoIlBL1HaxaWpu0jVDfuwtCGSP9bu2pj6HGbuYVA=";
+//! // Get DEWIF file content (Usually from disk)
+//! let dewif_file_content = "AAAAATHfJ3vTvEPcXm22NwhJtnNdGuSjikpSYIMgX96Z9xVT0y8GoIlBL1HaxaWpu0jVDfuwtCGSP9bu2pj6HGbuYVA=";
 //!
 //! // Get user passphrase for DEWIF decryption (from cli prompt or gui)
 //! let encryption_passphrase = "toto titi tata";
 //!
-//! // Read DEWIP file content
+//! // Read DEWIF file content
 //! // If the file content is correct, we get a key-pair iterator.
-//! let mut key_pair_iter = read_dewip_file_content(dewip_file_content, encryption_passphrase)
+//! let mut key_pair_iter = read_dewif_file_content(dewif_file_content, encryption_passphrase)
 //!     .expect("invalid DEWIF file.")
 //!     .into_iter();
 //!
@@ -85,7 +85,7 @@
 mod read;
 mod write;
 
-pub use read::{read_dewip_file_content, DewipReadError};
+pub use read::{read_dewif_file_content, DewifReadError};
 pub use write::{write_dewif_v1_content, write_dewif_v2_content};
 
 use crate::hashs::Hash;
@@ -132,13 +132,13 @@ mod tests {
     use crate::seeds::Seed32;
 
     #[test]
-    fn dewip_v1() {
+    fn dewif_v1() {
         let written_keypair = KeyPairFromSeed32Generator::generate(Seed32::new([0u8; 32]));
 
         let dewif_content = write_dewif_v1_content(&written_keypair, "toto");
 
-        let mut keypairs_iter = read_dewip_file_content(&dewif_content, "toto")
-            .expect("dewip content must be readed successfully")
+        let mut keypairs_iter = read_dewif_file_content(&dewif_content, "toto")
+            .expect("dewif content must be readed successfully")
             .into_iter();
         let keypair_read = keypairs_iter.next().expect("Must read one keypair");
 
@@ -146,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn dewip_v1_corrupted() -> Result<(), ()> {
+    fn dewif_v1_corrupted() -> Result<(), ()> {
         let written_keypair = KeyPairFromSeed32Generator::generate(Seed32::new([0u8; 32]));
 
         let mut dewif_content = write_dewif_v1_content(&written_keypair, "toto");
@@ -155,8 +155,8 @@ mod tests {
         let dewif_bytes_mut = unsafe { dewif_content.as_bytes_mut() };
         dewif_bytes_mut[13] = 0x52;
 
-        if let Err(DewipReadError::CorruptedContent) =
-            read_dewip_file_content(&dewif_content, "toto")
+        if let Err(DewifReadError::CorruptedContent) =
+            read_dewif_file_content(&dewif_content, "toto")
         {
             Ok(())
         } else {
@@ -165,14 +165,14 @@ mod tests {
     }
 
     #[test]
-    fn dewip_v2() {
+    fn dewif_v2() {
         let written_keypair1 = KeyPairFromSeed32Generator::generate(Seed32::new([0u8; 32]));
         let written_keypair2 = KeyPairFromSeed32Generator::generate(Seed32::new([1u8; 32]));
 
         let dewif_content = write_dewif_v2_content(&written_keypair1, &written_keypair2, "toto");
 
-        let mut keypairs_iter = read_dewip_file_content(&dewif_content, "toto")
-            .expect("dewip content must be readed successfully")
+        let mut keypairs_iter = read_dewif_file_content(&dewif_content, "toto")
+            .expect("dewif content must be readed successfully")
             .into_iter();
         let keypair1_read = keypairs_iter.next().expect("Must read one keypair");
         let keypair2_read = keypairs_iter.next().expect("Must read one keypair");
@@ -182,7 +182,7 @@ mod tests {
     }
 
     #[test]
-    fn dewip_v2_corrupted() -> Result<(), ()> {
+    fn dewif_v2_corrupted() -> Result<(), ()> {
         let written_keypair1 = KeyPairFromSeed32Generator::generate(Seed32::new([0u8; 32]));
         let written_keypair2 = KeyPairFromSeed32Generator::generate(Seed32::new([1u8; 32]));
 
@@ -193,8 +193,8 @@ mod tests {
         let dewif_bytes_mut = unsafe { dewif_content.as_bytes_mut() };
         dewif_bytes_mut[13] = 0x52;
 
-        if let Err(DewipReadError::CorruptedContent) =
-            read_dewip_file_content(&dewif_content, "toto")
+        if let Err(DewifReadError::CorruptedContent) =
+            read_dewif_file_content(&dewif_content, "toto")
         {
             Ok(())
         } else {

@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-//! Read [DEWIP](https://git.duniter.org/nodes/common/doc/blob/dewif/rfc/0013_Duniter_Encrypted_Wallet_Import_Format.md) file content
+//! Read [DEWIF](https://git.duniter.org/nodes/common/doc/blob/dewif/rfc/0013_Duniter_Encrypted_Wallet_Import_Format.md) file content
 
 use crate::keys::ed25519::{KeyPairFromSeed32Generator, PublicKey, PUBKEY_SIZE_IN_BYTES};
 use crate::keys::KeyPairEnum;
@@ -25,11 +25,11 @@ use thiserror::Error;
 
 const MAX_KEYPAIRS_COUNT: usize = 2;
 
-/// Error when try to read DEWIP file content
+/// Error when try to read DEWIF file content
 #[derive(Clone, Debug, Error)]
-pub enum DewipReadError {
-    /// DEWIP file content is corrupted
-    #[error("DEWIP file content is corrupted")]
+pub enum DewifReadError {
+    /// DEWIF file content is corrupted
+    #[error("DEWIF file content is corrupted")]
     CorruptedContent,
     /// Invalid base 64 string
     #[error("Invalid base 64 string: {0}")]
@@ -51,15 +51,15 @@ pub enum DewipReadError {
     },
 }
 
-/// read dewip file content with user passphrase
-pub fn read_dewip_file_content(
+/// read dewif file content with user passphrase
+pub fn read_dewif_file_content(
     file_content: &str,
     passphrase: &str,
-) -> Result<impl IntoIterator<Item = KeyPairEnum>, DewipReadError> {
-    let mut bytes = base64::decode(file_content).map_err(DewipReadError::InvalidBase64Str)?;
+) -> Result<impl IntoIterator<Item = KeyPairEnum>, DewifReadError> {
+    let mut bytes = base64::decode(file_content).map_err(DewifReadError::InvalidBase64Str)?;
 
     if bytes.len() < 4 {
-        return Err(DewipReadError::TooShortContent);
+        return Err(DewifReadError::TooShortContent);
     }
 
     let version = byteorder::BigEndian::read_u32(&bytes[0..4]);
@@ -67,20 +67,20 @@ pub fn read_dewip_file_content(
     match version {
         1 => Ok({
             let mut array_keypairs = ArrayVec::new();
-            array_keypairs.push(read_dewip_v1(&mut bytes[4..], passphrase)?);
+            array_keypairs.push(read_dewif_v1(&mut bytes[4..], passphrase)?);
             array_keypairs
         }),
-        2 => read_dewip_v2(&mut bytes[4..], passphrase),
-        other_version => Err(DewipReadError::UnsupportedVersion {
+        2 => read_dewif_v2(&mut bytes[4..], passphrase),
+        other_version => Err(DewifReadError::UnsupportedVersion {
             actual: other_version,
         }),
     }
 }
 
-fn read_dewip_v1(bytes: &mut [u8], passphrase: &str) -> Result<KeyPairEnum, DewipReadError> {
+fn read_dewif_v1(bytes: &mut [u8], passphrase: &str) -> Result<KeyPairEnum, DewifReadError> {
     match bytes.len() {
-        len if len < super::V1_ENCRYPTED_BYTES_LEN => return Err(DewipReadError::TooShortContent),
-        len if len > super::V1_ENCRYPTED_BYTES_LEN => return Err(DewipReadError::TooLongContent),
+        len if len < super::V1_ENCRYPTED_BYTES_LEN => return Err(DewifReadError::TooShortContent),
+        len if len > super::V1_ENCRYPTED_BYTES_LEN => return Err(DewifReadError::TooLongContent),
         _ => (),
     }
 
@@ -92,15 +92,15 @@ fn read_dewip_v1(bytes: &mut [u8], passphrase: &str) -> Result<KeyPairEnum, Dewi
     bytes_to_checked_keypair(bytes)
 }
 
-fn read_dewip_v2(
+fn read_dewif_v2(
     bytes: &mut [u8],
     passphrase: &str,
-) -> Result<ArrayVec<[KeyPairEnum; MAX_KEYPAIRS_COUNT]>, DewipReadError> {
+) -> Result<ArrayVec<[KeyPairEnum; MAX_KEYPAIRS_COUNT]>, DewifReadError> {
     let mut array_keypairs = ArrayVec::new();
 
     match bytes.len() {
-        len if len < super::V2_ENCRYPTED_BYTES_LEN => return Err(DewipReadError::TooShortContent),
-        len if len > super::V2_ENCRYPTED_BYTES_LEN => return Err(DewipReadError::TooLongContent),
+        len if len < super::V2_ENCRYPTED_BYTES_LEN => return Err(DewifReadError::TooShortContent),
+        len if len > super::V2_ENCRYPTED_BYTES_LEN => return Err(DewifReadError::TooLongContent),
         _ => (),
     }
 
@@ -114,7 +114,7 @@ fn read_dewip_v2(
     Ok(array_keypairs)
 }
 
-fn bytes_to_checked_keypair(bytes: &[u8]) -> Result<KeyPairEnum, DewipReadError> {
+fn bytes_to_checked_keypair(bytes: &[u8]) -> Result<KeyPairEnum, DewifReadError> {
     // Wrap bytes into Seed32 and PublicKey
     let seed = Seed32::new(
         (&bytes[..PUBKEY_SIZE_IN_BYTES])
@@ -128,7 +128,7 @@ fn bytes_to_checked_keypair(bytes: &[u8]) -> Result<KeyPairEnum, DewipReadError>
 
     // Check pubkey
     if keypair.pubkey() != expected_pubkey {
-        Err(DewipReadError::CorruptedContent)
+        Err(DewifReadError::CorruptedContent)
     } else {
         Ok(KeyPairEnum::Ed25519(keypair))
     }
@@ -141,7 +141,7 @@ mod tests {
 
     #[test]
     fn read_unsupported_version() -> Result<(), ()> {
-        if let Err(DewipReadError::UnsupportedVersion { .. }) = read_dewip_file_content(
+        if let Err(DewifReadError::UnsupportedVersion { .. }) = read_dewif_file_content(
             "ABAAAfKjMzOFfhwgypF3mAx0QDXyozMzhX4cIMqRd5gMdEA1WZwQjCR49iZDK2QhYfdTbPz9AGB01edt4iRSzdTp3c4=",
             "toto"
         ) {
@@ -153,7 +153,7 @@ mod tests {
 
     #[test]
     fn read_too_short_content() -> Result<(), ()> {
-        if let Err(DewipReadError::TooShortContent) = read_dewip_file_content("AAA", "toto") {
+        if let Err(DewifReadError::TooShortContent) = read_dewif_file_content("AAA", "toto") {
             Ok(())
         } else {
             panic!("Read must be fail with error TooShortContent.")
@@ -164,15 +164,15 @@ mod tests {
     fn tmp() {
         use crate::keys::{KeyPair, Signator};
 
-        // Get DEWIP file content (Usually from disk)
-        let dewip_file_content = "AAAAATHfJ3vTvEPcXm22NwhJtnNdGuSjikpSYIMgX96Z9xVT0y8GoIlBL1HaxaWpu0jVDfuwtCGSP9bu2pj6HGbuYVA=";
+        // Get DEWIF file content (Usually from disk)
+        let dewif_file_content = "AAAAATHfJ3vTvEPcXm22NwhJtnNdGuSjikpSYIMgX96Z9xVT0y8GoIlBL1HaxaWpu0jVDfuwtCGSP9bu2pj6HGbuYVA=";
 
         // Get user passphrase for DEWIF decryption (from cli prompt or gui)
         let encryption_passphrase = "toto titi tata";
 
-        // Read DEWIP file content
+        // Read DEWIF file content
         // If the file content is correct, we get a key-pair iterator.
-        let mut key_pair_iter = read_dewip_file_content(dewip_file_content, encryption_passphrase)
+        let mut key_pair_iter = read_dewif_file_content(dewif_file_content, encryption_passphrase)
             .expect("invalid DEWIF file.")
             .into_iter();
 

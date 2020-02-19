@@ -31,8 +31,8 @@
 #[cfg(feature = "aes256")]
 pub mod aes256;
 pub mod bases;
-#[cfg(feature = "dewip")]
-pub mod dewip;
+#[cfg(feature = "dewif")]
+pub mod dewif;
 pub mod hashs;
 pub mod keys;
 pub mod rand;

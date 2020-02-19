@@ -13,13 +13,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-//! Write [DEWIP](https://git.duniter.org/nodes/common/doc/blob/dewif/rfc/0013_Duniter_Encrypted_Wallet_Import_Format.md) file content
+//! Write [DEWIF](https://git.duniter.org/nodes/common/doc/blob/dewif/rfc/0013_Duniter_Encrypted_Wallet_Import_Format.md) file content
 
 use crate::keys::ed25519::Ed25519KeyPair;
 use arrayvec::ArrayVec;
 use unwrap::unwrap;
 
-/// Write dewip v1 file content with user passphrase
+/// Write dewif v1 file content with user passphrase
 pub fn write_dewif_v1_content(keypair: &Ed25519KeyPair, passphrase: &str) -> String {
     let mut bytes = ArrayVec::<[u8; super::V1_BYTES_LEN]>::new();
     unwrap!(bytes.try_extend_from_slice(super::VERSION_V1));
@@ -32,7 +32,7 @@ pub fn write_dewif_v1_content(keypair: &Ed25519KeyPair, passphrase: &str) -> Str
     base64::encode(bytes.as_ref())
 }
 
-/// Write dewip v2 file content with user passphrase
+/// Write dewif v2 file content with user passphrase
 pub fn write_dewif_v2_content(
     keypair1: &Ed25519KeyPair,
     keypair2: &Ed25519KeyPair,
