@@ -23,6 +23,7 @@ use super::PublicKey as PublicKeyMethods;
 use super::{PubkeyFromBytesError, SigError};
 use crate::bases::b58::{bytes_to_str_base58, ToBase58};
 use crate::bases::*;
+#[cfg(feature = "rand")]
 use crate::rand::UnspecifiedRandError;
 use crate::seeds::Seed32;
 use base64;
@@ -278,6 +279,7 @@ pub struct Ed25519KeyPair {
 }
 
 impl Ed25519KeyPair {
+    #[cfg(feature = "rand")]
     /// Generate random keypair
     pub fn generate_random() -> Result<Self, UnspecifiedRandError> {
         Ok(KeyPairFromSeed32Generator::generate(Seed32::random()?))

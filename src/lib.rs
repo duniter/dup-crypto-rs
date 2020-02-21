@@ -38,5 +38,6 @@ pub mod bases;
 pub mod dewif;
 pub mod hashs;
 pub mod keys;
+#[cfg(feature = "rand")]
 pub mod rand;
 pub mod seeds;

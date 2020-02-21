@@ -29,8 +29,9 @@ zeroize = { version = "1.1.0", features = ["zeroize_derive"] }
 bincode = "1.2.0"
 
 [features]
-default = ["dewif", "ser"]
+default = ["dewif", "rand", "ser"]
 
 aes256 = ["aes"]
 dewif = ["aes256", "arrayvec"]
+rand = []
 ser = ["serde"]

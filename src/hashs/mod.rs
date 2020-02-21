@@ -16,6 +16,7 @@
 //! Provide wrappers for cryptographic hashs
 
 use crate::bases::*;
+#[cfg(feature = "rand")]
 use crate::rand::UnspecifiedRandError;
 use ring::digest;
 #[cfg(feature = "ser")]
@@ -57,6 +58,7 @@ impl Hash {
     /// Hash size (in bytes).
     pub const SIZE_IN_BYTES: usize = 32;
 
+    #[cfg(feature = "rand")]
     /// Generate a random Hash
     #[inline]
     pub fn random() -> Result<Self, UnspecifiedRandError> {
@@ -102,6 +104,7 @@ mod tests {
 
     use super::*;
 
+    #[cfg(feature = "rand")]
     #[test]
     fn test_hash_random() {
         let hash1 = Hash::random();
