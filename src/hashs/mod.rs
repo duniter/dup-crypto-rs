@@ -17,7 +17,7 @@
 
 use crate::bases::*;
 use crate::rand::UnspecifiedRandError;
-use ring::{digest, rand};
+use ring::digest;
 #[cfg(feature = "ser")]
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display, Error, Formatter};
@@ -60,9 +60,8 @@ impl Hash {
     /// Generate a random Hash
     #[inline]
     pub fn random() -> Result<Self, UnspecifiedRandError> {
-        let random_bytes = rand::generate::<[u8; 32]>(&rand::SystemRandom::new())
-            .map_err(|_| UnspecifiedRandError)?;
-        Ok(Hash(random_bytes.expose()))
+        let random_bytes = crate::rand::gen_32_bytes().map_err(|_| UnspecifiedRandError)?;
+        Ok(Hash(random_bytes))
     }
 
     /// Compute hash of any binary datas

@@ -18,7 +18,6 @@
 use crate::bases::b58::{bytes_to_str_base58, ToBase58};
 use crate::bases::*;
 use crate::rand::UnspecifiedRandError;
-use ring::rand;
 #[cfg(feature = "ser")]
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Debug, Display, Formatter};
@@ -68,9 +67,8 @@ impl Seed32 {
     #[inline]
     /// Generate random seed
     pub fn random() -> Result<Seed32, UnspecifiedRandError> {
-        let random_bytes = rand::generate::<[u8; 32]>(&rand::SystemRandom::new())
-            .map_err(|_| UnspecifiedRandError)?;
-        Ok(Seed32::new(random_bytes.expose()))
+        let random_bytes = crate::rand::gen_32_bytes().map_err(|_| UnspecifiedRandError)?;
+        Ok(Seed32::new(random_bytes))
     }
 }
 

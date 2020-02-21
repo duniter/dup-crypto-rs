@@ -16,7 +16,7 @@
 //! Manage random generation.
 
 use byteorder::ByteOrder;
-use ring::rand;
+use ring::rand::{generate, SystemRandom};
 
 /// An error with absolutely no details.
 ///
@@ -37,12 +37,53 @@ use ring::rand;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct UnspecifiedRandError;
 
+/// Secure random bytes generator
+pub fn gen_random_bytes(buffer: &mut [u8]) -> Result<(), UnspecifiedRandError> {
+    let mut cursor = 0;
+    let mut remaining_len = buffer.len();
+
+    while remaining_len >= 32 {
+        buffer[cursor..(cursor + 32)].copy_from_slice(&gen_32_bytes()?[..]);
+        cursor += 32;
+        remaining_len -= 32;
+    }
+    while remaining_len >= 16 {
+        buffer[cursor..(cursor + 16)].copy_from_slice(&gen_16_bytes()?[..]);
+        cursor += 16;
+        remaining_len -= 16;
+    }
+    if remaining_len > 0 {
+        buffer[cursor..].copy_from_slice(&gen_16_bytes()?[..remaining_len]);
+    }
+
+    Ok(())
+}
+
 #[inline]
 /// Generate random u32
 pub fn gen_u32() -> Result<u32, UnspecifiedRandError> {
-    let rng = rand::SystemRandom::new();
-    let random_bytes = rand::generate::<[u8; 4]>(&rng).map_err(|_| UnspecifiedRandError)?;
+    let random_bytes =
+        generate::<[u8; 4]>(&SystemRandom::new()).map_err(|_| UnspecifiedRandError)?;
+
     Ok(byteorder::BigEndian::read_u32(&random_bytes.expose()))
+}
+
+#[inline]
+/// Generate random 16 bytes
+pub fn gen_16_bytes() -> Result<[u8; 16], UnspecifiedRandError> {
+    let random_bytes =
+        generate::<[u8; 16]>(&SystemRandom::new()).map_err(|_| UnspecifiedRandError)?;
+
+    Ok(random_bytes.expose())
+}
+
+#[inline]
+/// Generate random 32 bytes
+pub fn gen_32_bytes() -> Result<[u8; 32], UnspecifiedRandError> {
+    let random_bytes =
+        generate::<[u8; 32]>(&SystemRandom::new()).map_err(|_| UnspecifiedRandError)?;
+
+    Ok(random_bytes.expose())
 }
 
 #[cfg(test)]
@@ -51,7 +92,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_gen_u32() {
-        assert_ne!(gen_u32(), gen_u32())
+    fn test_gen_u32() -> Result<(), UnspecifiedRandError> {
+        assert_ne!(gen_u32()?, gen_u32()?);
+        Ok(())
+    }
+
+    #[test]
+    fn test_gen_random_bytes() -> Result<(), UnspecifiedRandError> {
+        let mut buffer = [0u8; 51];
+        gen_random_bytes(buffer.as_mut())?;
+        let mut buffer = [0u8; 48];
+        gen_random_bytes(buffer.as_mut())?;
+        Ok(())
     }
 }
