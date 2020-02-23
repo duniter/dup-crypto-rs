@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+- DEWIF: add currency field
+
 ## [0.10.0] - 2020-02-20
 
 ### Changed
