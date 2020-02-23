@@ -18,8 +18,9 @@
 //! # Write ed25519 key-pair in DEWIF file
 //!
 //! ```
-//! use dup_crypto::dewif::write_dewif_v1_content;
+//! use dup_crypto::dewif::{Currency, G1_TEST_CURRENCY, write_dewif_v1_content};
 //! use dup_crypto::keys::ed25519::{KeyPairFromSaltedPasswordGenerator, SaltedPassword};
+//! use std::num::NonZeroU32;
 //!
 //! // Get user credentials (from cli prompt or gui)
 //! let credentials = SaltedPassword::new("user salt".to_owned(), "user password".to_owned());
@@ -31,10 +32,10 @@
 //! let encryption_passphrase = "toto titi tata";
 //!
 //! // Serialize keypair in DEWIF format
-//! let dewif_content = write_dewif_v1_content(&keypair, encryption_passphrase);
+//! let dewif_content = write_dewif_v1_content(Currency::from(G1_TEST_CURRENCY), &keypair, encryption_passphrase);
 //!
 //! assert_eq!(
-//!     "AAAAATHfJ3vTvEPcXm22NwhJtnNdGuSjikpSYIMgX96Z9xVT0y8GoIlBL1HaxaWpu0jVDfuwtCGSP9bu2pj6HGbuYVA=",
+//!     "AAAAARAAAAEx3yd707xD3F5ttjcISbZzXRrko4pKUmCDIF/emfcVU9MvBqCJQS9R2sWlqbtI1Q37sLQhkj/W7tqY+hxm7mFQ",
 //!     dewif_content
 //! )
 //! ```
@@ -42,18 +43,23 @@
 //! # Read DEWIF file
 //!
 //! ```
-//! use dup_crypto::dewif::read_dewif_file_content;
+//! use dup_crypto::dewif::{Currency, ExpectedCurrency, read_dewif_file_content};
 //! use dup_crypto::keys::{KeyPair, Signator};
+//! use std::num::NonZeroU32;
+//! use std::str::FromStr;
 //!
 //! // Get DEWIF file content (Usually from disk)
-//! let dewif_file_content = "AAAAATHfJ3vTvEPcXm22NwhJtnNdGuSjikpSYIMgX96Z9xVT0y8GoIlBL1HaxaWpu0jVDfuwtCGSP9bu2pj6HGbuYVA=";
+//! let dewif_file_content = "AAAAARAAAAEx3yd707xD3F5ttjcISbZzXRrko4pKUmCDIF/emfcVU9MvBqCJQS9R2sWlqbtI1Q37sLQhkj/W7tqY+hxm7mFQ";
 //!
 //! // Get user passphrase for DEWIF decryption (from cli prompt or gui)
 //! let encryption_passphrase = "toto titi tata";
 //!
+//! // Expected currency
+//! let expected_currency = ExpectedCurrency::Specific(Currency::from_str("g1-test").expect("unknown currency"));
+//!
 //! // Read DEWIF file content
 //! // If the file content is correct, we get a key-pair iterator.
-//! let mut key_pair_iter = read_dewif_file_content(dewif_file_content, encryption_passphrase)?;
+//! let mut key_pair_iter = read_dewif_file_content(expected_currency, dewif_file_content, encryption_passphrase)?;
 //!
 //! // Get first key-pair
 //! let key_pair = key_pair_iter
@@ -81,9 +87,11 @@
 //! ```
 //!
 
+mod currency;
 mod read;
 mod write;
 
+pub use currency::{Currency, ExpectedCurrency, G1_CURRENCY, G1_TEST_CURRENCY};
 pub use read::{read_dewif_file_content, DewifReadError};
 pub use write::{write_dewif_v1_content, write_dewif_v2_content};
 
@@ -92,17 +100,17 @@ use crate::seeds::Seed32;
 use arrayvec::ArrayVec;
 use unwrap::unwrap;
 
-const VERSION_BYTES: usize = 4;
+const UNENCRYPTED_BYTES_LEN: usize = 8;
 
 // v1
 static VERSION_V1: &[u8] = &[0, 0, 0, 1];
-const V1_BYTES_LEN: usize = 68;
+const V1_BYTES_LEN: usize = 72;
 const V1_ENCRYPTED_BYTES_LEN: usize = 64;
 const V1_AES_BLOCKS_COUNT: usize = 4;
 
 // v2
 static VERSION_V2: &[u8] = &[0, 0, 0, 2];
-const V2_BYTES_LEN: usize = 132;
+const V2_BYTES_LEN: usize = 136;
 const V2_ENCRYPTED_BYTES_LEN: usize = 128;
 
 fn gen_aes_seed(passphrase: &str) -> Seed32 {
@@ -133,11 +141,13 @@ mod tests {
     #[test]
     fn dewif_v1() {
         let written_keypair = KeyPairFromSeed32Generator::generate(Seed32::new([0u8; 32]));
+        let currency = Currency::from(G1_TEST_CURRENCY);
 
-        let dewif_content = write_dewif_v1_content(&written_keypair, "toto");
+        let dewif_content = write_dewif_v1_content(currency, &written_keypair, "toto");
 
-        let mut keypairs_iter = read_dewif_file_content(&dewif_content, "toto")
-            .expect("dewif content must be readed successfully");
+        let mut keypairs_iter =
+            read_dewif_file_content(ExpectedCurrency::Specific(currency), &dewif_content, "toto")
+                .expect("dewif content must be readed successfully");
         let keypair_read = keypairs_iter.next().expect("Must read one keypair");
 
         assert_eq!(KeyPairEnum::Ed25519(written_keypair), keypair_read,)
@@ -146,15 +156,16 @@ mod tests {
     #[test]
     fn dewif_v1_corrupted() -> Result<(), ()> {
         let written_keypair = KeyPairFromSeed32Generator::generate(Seed32::new([0u8; 32]));
+        let currency = Currency::from(G1_TEST_CURRENCY);
 
-        let mut dewif_content = write_dewif_v1_content(&written_keypair, "toto");
+        let mut dewif_content = write_dewif_v1_content(currency, &written_keypair, "toto");
 
         // Corrupt one byte in dewif_content
         let dewif_bytes_mut = unsafe { dewif_content.as_bytes_mut() };
         dewif_bytes_mut[13] = 0x52;
 
         if let Err(DewifReadError::CorruptedContent) =
-            read_dewif_file_content(&dewif_content, "toto")
+            read_dewif_file_content(ExpectedCurrency::Specific(currency), &dewif_content, "toto")
         {
             Ok(())
         } else {
@@ -166,11 +177,14 @@ mod tests {
     fn dewif_v2() {
         let written_keypair1 = KeyPairFromSeed32Generator::generate(Seed32::new([0u8; 32]));
         let written_keypair2 = KeyPairFromSeed32Generator::generate(Seed32::new([1u8; 32]));
+        let currency = Currency::from(G1_TEST_CURRENCY);
 
-        let dewif_content = write_dewif_v2_content(&written_keypair1, &written_keypair2, "toto");
+        let dewif_content =
+            write_dewif_v2_content(currency, &written_keypair1, &written_keypair2, "toto");
 
-        let mut keypairs_iter = read_dewif_file_content(&dewif_content, "toto")
-            .expect("dewif content must be readed successfully");
+        let mut keypairs_iter =
+            read_dewif_file_content(ExpectedCurrency::Specific(currency), &dewif_content, "toto")
+                .expect("dewif content must be readed successfully");
         let keypair1_read = keypairs_iter.next().expect("Must read one keypair");
         let keypair2_read = keypairs_iter.next().expect("Must read one keypair");
 
@@ -182,16 +196,17 @@ mod tests {
     fn dewif_v2_corrupted() -> Result<(), ()> {
         let written_keypair1 = KeyPairFromSeed32Generator::generate(Seed32::new([0u8; 32]));
         let written_keypair2 = KeyPairFromSeed32Generator::generate(Seed32::new([1u8; 32]));
+        let currency = Currency::from(G1_TEST_CURRENCY);
 
         let mut dewif_content =
-            write_dewif_v2_content(&written_keypair1, &written_keypair2, "toto");
+            write_dewif_v2_content(currency, &written_keypair1, &written_keypair2, "toto");
 
         // Corrupt one byte in dewif_content
         let dewif_bytes_mut = unsafe { dewif_content.as_bytes_mut() };
         dewif_bytes_mut[13] = 0x52;
 
         if let Err(DewifReadError::CorruptedContent) =
-            read_dewif_file_content(&dewif_content, "toto")
+            read_dewif_file_content(ExpectedCurrency::Specific(currency), &dewif_content, "toto")
         {
             Ok(())
         } else {

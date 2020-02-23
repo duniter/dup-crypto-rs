@@ -15,6 +15,7 @@
 
 //! Read [DEWIF](https://git.duniter.org/nodes/common/doc/blob/dewif/rfc/0013_Duniter_Encrypted_Wallet_Import_Format.md) file content
 
+use super::{Currency, ExpectedCurrency};
 use crate::keys::ed25519::{KeyPairFromSeed32Generator, PublicKey, PUBKEY_SIZE_IN_BYTES};
 use crate::keys::KeyPairEnum;
 use crate::seeds::Seed32;
@@ -32,22 +33,30 @@ type KeyPairsIter = arrayvec::IntoIter<[KeyPairEnum; MAX_KEYPAIRS_COUNT]>;
 #[derive(Clone, Debug, Error)]
 pub enum DewifReadError {
     /// DEWIF file content is corrupted
-    #[error("DEWIF file content is corrupted")]
+    #[error("DEWIF file content is corrupted.")]
     CorruptedContent,
     /// Invalid base 64 string
-    #[error("Invalid base 64 string: {0}")]
+    #[error("Invalid base 64 string: {0}.")]
     InvalidBase64Str(base64::DecodeError),
     /// Invalid format
-    #[error("Invalid format")]
+    #[error("Invalid format.")]
     InvalidFormat,
     /// Too short content
-    #[error("Too short content")]
+    #[error("Too short content.")]
     TooShortContent,
     /// Too long content
-    #[error("Too long content")]
+    #[error("Too long content.")]
     TooLongContent,
+    /// Unexpected currency
+    #[error("Unexpected currency '{actual}', expected: '{expected}'.")]
+    UnexpectedCurrency {
+        /// Expected currency
+        expected: ExpectedCurrency,
+        /// Actual currency
+        actual: Currency,
+    },
     /// Unsupported version
-    #[error("Version {actual:?} is not supported. Supported versions: [1, 2].")]
+    #[error("Version {actual} is not supported. Supported versions: [1, 2].")]
     UnsupportedVersion {
         /// Actual version
         actual: u32,
@@ -56,24 +65,33 @@ pub enum DewifReadError {
 
 /// read dewif file content with user passphrase
 pub fn read_dewif_file_content(
+    expected_currency: ExpectedCurrency,
     file_content: &str,
     passphrase: &str,
 ) -> Result<impl Iterator<Item = KeyPairEnum>, DewifReadError> {
     let mut bytes = base64::decode(file_content).map_err(DewifReadError::InvalidBase64Str)?;
 
-    if bytes.len() < 4 {
+    if bytes.len() < 8 {
         return Err(DewifReadError::TooShortContent);
     }
 
     let version = byteorder::BigEndian::read_u32(&bytes[0..4]);
+    let currency = Currency::from(byteorder::BigEndian::read_u32(&bytes[4..8]));
+
+    if !expected_currency.is_valid(currency) {
+        return Err(DewifReadError::UnexpectedCurrency {
+            expected: expected_currency,
+            actual: currency,
+        });
+    }
 
     match version {
         1 => Ok({
             let mut array_keypairs = KeyPairsArray::new();
-            array_keypairs.push(read_dewif_v1(&mut bytes[4..], passphrase)?);
+            array_keypairs.push(read_dewif_v1(&mut bytes[8..], passphrase)?);
             array_keypairs.into_iter()
         }),
-        2 => read_dewif_v2(&mut bytes[4..], passphrase),
+        2 => read_dewif_v2(&mut bytes[8..], passphrase),
         other_version => Err(DewifReadError::UnsupportedVersion {
             actual: other_version,
         }),
@@ -142,7 +160,8 @@ mod tests {
     #[test]
     fn read_unsupported_version() -> Result<(), ()> {
         if let Err(DewifReadError::UnsupportedVersion { .. }) = read_dewif_file_content(
-            "ABAAAfKjMzOFfhwgypF3mAx0QDXyozMzhX4cIMqRd5gMdEA1WZwQjCR49iZDK2QhYfdTbPz9AGB01edt4iRSzdTp3c4=",
+            ExpectedCurrency::Any,
+            "ABAAAb30ng3kI9QGMbR7TYCqPhS99J4N5CPUBjG0e02Aqj4U1UmOemI6pweNm1Ab1AR4V6ZWFnwkkp9QPxppVeMv7aaLWdop",
             "toto"
         ) {
             Ok(())
@@ -153,7 +172,9 @@ mod tests {
 
     #[test]
     fn read_too_short_content() -> Result<(), ()> {
-        if let Err(DewifReadError::TooShortContent) = read_dewif_file_content("AAA", "toto") {
+        if let Err(DewifReadError::TooShortContent) =
+            read_dewif_file_content(ExpectedCurrency::Any, "AAA", "toto")
+        {
             Ok(())
         } else {
             panic!("Read must be fail with error TooShortContent.")
@@ -161,19 +182,39 @@ mod tests {
     }
 
     #[test]
-    fn tmp() {
+    fn read_unexpected_currency() -> Result<(), ()> {
+        if let Err(DewifReadError::UnexpectedCurrency { .. }) = read_dewif_file_content(
+            ExpectedCurrency::Specific(Currency::from(42)),
+            "AAAAARAAAAEx3yd707xD3F5ttjcISbZzXRrko4pKUmCDIF/emfcVU9MvBqCJQS9R2sWlqbtI1Q37sLQhkj/W7tqY+hxm7mFQ",
+            "toto titi tata"
+        ) {
+            Ok(())
+        } else {
+            panic!("Read must be fail with error UnexpectedCurrency.")
+        }
+    }
+
+    #[test]
+    fn read_ok() {
+        use crate::dewif::Currency;
         use crate::keys::{KeyPair, Signator};
+        use std::str::FromStr;
 
         // Get DEWIF file content (Usually from disk)
-        let dewif_file_content = "AAAAATHfJ3vTvEPcXm22NwhJtnNdGuSjikpSYIMgX96Z9xVT0y8GoIlBL1HaxaWpu0jVDfuwtCGSP9bu2pj6HGbuYVA=";
+        let dewif_file_content = "AAAAARAAAAEx3yd707xD3F5ttjcISbZzXRrko4pKUmCDIF/emfcVU9MvBqCJQS9R2sWlqbtI1Q37sLQhkj/W7tqY+hxm7mFQ";
 
         // Get user passphrase for DEWIF decryption (from cli prompt or gui)
         let encryption_passphrase = "toto titi tata";
 
+        // Expected currency
+        let expected_currency =
+            ExpectedCurrency::Specific(Currency::from_str("g1-test").expect("unknown currency"));
+
         // Read DEWIF file content
         // If the file content is correct, we get a key-pair iterator.
-        let mut key_pair_iter = read_dewif_file_content(dewif_file_content, encryption_passphrase)
-            .expect("invalid DEWIF file.");
+        let mut key_pair_iter =
+            read_dewif_file_content(expected_currency, dewif_file_content, encryption_passphrase)
+                .expect("invalid DEWIF file");
 
         // Get first key-pair
         let key_pair = key_pair_iter
