@@ -27,6 +27,12 @@ zeroize = { version = "1.1.0", features = ["zeroize_derive"] }
 
 [dev-dependencies]
 bincode = "1.2.0"
+criterion = "0.3.1"
+sodiumoxide = "0.2.5"
+
+[[bench]]
+name = "ring_vs_sodium"
+harness = false
 
 [features]
 default = ["dewif", "rand", "ser"]
