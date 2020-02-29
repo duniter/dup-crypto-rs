@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+## [0.11.0] - 2020-02-29
+
 ### Changed
 
 - DEWIF: add currency field
@@ -39,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial version.
 
 <!-- next-url -->
-[Unreleased]: https://git.duniter.org/libs/dup-crypto-rs/compare/v0.10.0...HEAD
+[Unreleased]: https://git.duniter.org/libs/dup-crypto-rs/compare/v0.11.0...HEAD
+[0.11.0]: https://git.duniter.org/libs/dup-crypto-rs/compare/v0.10.0...v0.11.0
 [0.10.0]: https://git.duniter.org/libs/dup-crypto-rs/compare/v0.9.1...v0.10.0
 [0.9.1]: https://git.duniter.org/libs/dup-crypto-rs/compare/v0.8.0...v0.9.1
