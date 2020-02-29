@@ -17,6 +17,16 @@
 //!
 //! `dup` means DUniter Protocols.
 //!
+//! ## Summary
+//!
+//! * [Handle DEWIF format](./dewif/index.html#handle-dewif-format)
+//!   * [Write DEWIF file](./dewif/index.html#write-ed25519-key-pair-in-dewif-file)
+//!   * [Read DEWIF file](./dewif/index.html#read-dewif-file)
+//! * [Sha256](./hashs/index.html)
+//!   * [Compute Sha256 hash](./hashs/index.html#compute-sha256-hash)
+//! * [Ed25519](./keys/index.html)
+//!   * [generate and use ed25519 key-pair](./keys/index.html#generate-and-use-ed25519-key-pair)
+//!
 
 #![deny(
     clippy::option_unwrap_used,

@@ -18,7 +18,7 @@
 //! - Keys can be converted to/from Base58 string format.
 //! - Signatures can be converted to/from Base64 string format.
 //!
-//! # Usage
+//! # Generate and use ed25519 key-pair
 //!
 //! ```
 //! use dup_crypto::keys::{KeyPair, PublicKey, Signator, Signature};

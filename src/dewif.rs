@@ -13,9 +13,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-//! Handle [DEWIF](https://git.duniter.org/nodes/common/doc/blob/dewif/rfc/0013_Duniter_Encrypted_Wallet_Import_Format.md) format
+//! Handle [DEWIF][dewif-spec] format
 //!
-//! # Write ed25519 key-pair in DEWIF file
+//! See [DEWIF format specifications][dewif-spec].
+//!
+//! [dewif-spec]: https://git.duniter.org/documents/rfcs/blob/dewif/rfc/0013_Duniter_Encrypted_Wallet_Import_Format.md
+//!
+//! # Summary
+//!
+//! * [Write DEWIF file](#write-ed25519-key-pair-in-dewif-file)
+//! * [Read DEWIF file](#read-dewif-file)
+//!
+//!
+//! ## Write ed25519 key-pair in DEWIF file
 //!
 //! ```
 //! use dup_crypto::dewif::{Currency, G1_TEST_CURRENCY, write_dewif_v1_content};
@@ -40,7 +50,7 @@
 //! )
 //! ```
 //!
-//! # Read DEWIF file
+//! ## Read DEWIF file
 //!
 //! ```
 //! use dup_crypto::dewif::{Currency, ExpectedCurrency, read_dewif_file_content};

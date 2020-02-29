@@ -14,6 +14,24 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 //! Provide wrappers for cryptographic hashs
+//!
+//! # Summary
+//!
+//! * [Compute Sha256 hash](#compute-sha256-hash)
+//!
+//! ## Compute sha256 hash
+//!
+//! ```
+//! use dup_crypto::hashs::Hash;
+//!
+//! let hash: Hash = Hash::compute(b"datas");
+//!
+//! assert_eq!(
+//!     "958D41C80EF75834EFFC9CBE2E8AEE11AEDE28ADA596E876B8261EDF53266B40",
+//!     &hash.to_hex(),
+//! );
+//! ```
+//!
 
 use crate::bases::*;
 #[cfg(feature = "rand")]
