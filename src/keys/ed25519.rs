@@ -45,8 +45,6 @@ use zeroize::Zeroize;
 
 /// Maximal size of a public key in bytes
 pub const PUBKEY_SIZE_IN_BYTES: usize = 32;
-/// constl size of a public key in bytes
-pub const PUBKEY_MIN_SIZE_IN_BYTES: usize = 31;
 /// constf a signature in bytes
 pub const SIG_SIZE_IN_BYTES: usize = 64;
 
@@ -168,7 +166,7 @@ impl Default for PublicKey {
     fn default() -> Self {
         PublicKey {
             datas: [0u8; 32],
-            len: 32,
+            len: 0,
         }
     }
 }
@@ -183,7 +181,7 @@ impl TryFrom<&[u8]> for PublicKey {
     type Error = PubkeyFromBytesError;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        if bytes.len() > PUBKEY_SIZE_IN_BYTES || bytes.len() < PUBKEY_MIN_SIZE_IN_BYTES {
+        if bytes.len() > PUBKEY_SIZE_IN_BYTES {
             Err(PubkeyFromBytesError::InvalidBytesLen {
                 expected: PUBKEY_SIZE_IN_BYTES,
                 found: bytes.len(),
@@ -224,14 +222,7 @@ impl super::PublicKey for PublicKey {
     #[inline]
     fn from_base58(base58_data: &str) -> Result<Self, BaseConvertionError> {
         let (datas, len) = b58::str_base58_to_32bytes(base58_data)?;
-        if len < PUBKEY_MIN_SIZE_IN_BYTES {
-            Err(BaseConvertionError::InvalidLength {
-                expected: PUBKEY_SIZE_IN_BYTES,
-                found: len,
-            })
-        } else {
-            Ok(PublicKey { datas, len })
-        }
+        Ok(PublicKey { datas, len })
     }
 
     fn to_bytes_vector(&self) -> Vec<u8> {
@@ -493,6 +484,12 @@ mod tests {
                 found: 161
             }
         );
+    }
+
+    #[test]
+    fn test_pubkey_111_from_base58() {
+        let public58 = "11111111111111111111111111111111111111111111";
+        let _ = unwrap!(super::PublicKey::from_base58(public58));
     }
 
     #[test]
