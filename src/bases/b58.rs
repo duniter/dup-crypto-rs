@@ -26,25 +26,23 @@ pub trait ToBase58 {
 /// Create an array of 32 bytes from a Base58 string.
 pub fn str_base58_to_32bytes(base58_data: &str) -> Result<([u8; 32], usize), BaseConvertionError> {
     let mut source = base58_data;
+    let mut count_leading_1 = 0;
     while !source.is_empty() && &source[0..1] == "1" {
         source = &source[1..];
+        count_leading_1 += 1;
     }
 
     match bs58::decode(source).into_vec() {
         Ok(result) => {
-            let len = result.len();
-            if len <= 32 {
-                let mut u8_array = [0; 32];
-
-                u8_array[..len].clone_from_slice(&result[..len]);
-
-                Ok((u8_array, len))
-            } else {
-                Err(BaseConvertionError::InvalidLength {
-                    expected: 32,
-                    found: len,
-                })
+            let mut len = result.len();
+            if len > 32 {
+                len = 32;
             }
+            let mut u8_array = [0; 32];
+
+            u8_array[(32 - len)..].clone_from_slice(&result[..len]);
+
+            Ok((u8_array, count_leading_1))
         }
         Err(bs58::decode::Error::InvalidCharacter { character, index }) => {
             Err(BaseConvertionError::InvalidCharacter {
@@ -60,8 +58,56 @@ pub fn str_base58_to_32bytes(base58_data: &str) -> Result<([u8; 32], usize), Bas
 }
 
 /// Create a Base58 string from a slice of bytes.
-pub fn bytes_to_str_base58(bytes: &[u8]) -> String {
-    bs58::encode(bytes).into_string()
+pub fn bytes_to_str_base58(bytes: &[u8], mut count_leading_1: usize) -> String {
+    let mut str_base58 = String::new();
+    let bytes = &bytes[count_leading_1..];
+
+    let bytes = if count_leading_1 == 0 && !bytes.is_empty() && bytes[0] == 0 {
+        &bytes[1..]
+    } else {
+        while count_leading_1 > 0 {
+            count_leading_1 -= 1;
+            str_base58.push('1');
+        }
+        &bytes[count_leading_1..]
+    };
+
+    str_base58.push_str(&bs58::encode(bytes).into_string());
+
+    str_base58
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_base_58_str_with_leading_1() -> Result<(), BaseConvertionError> {
+        let base58str = "1V27SH9TiVEDs8TWFPydpRKxhvZari7wjGwQnPxMnkr";
+
+        let (bytes, count_leading_1) = str_base58_to_32bytes(base58str)?;
+
+        println!("{:?}", bytes);
+
+        assert_eq!(base58str, &bytes_to_str_base58(&bytes[..], count_leading_1),);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_base_58_str_with_43_char() -> Result<(), BaseConvertionError> {
+        let base58str = "2nV7Dv4nhTJ9dZUvRJpL34vFP9b2BkDjKWv9iBW2JaR";
+
+        let (bytes, count_leading_1) = str_base58_to_32bytes(base58str)?;
+
+        println!("{}", count_leading_1);
+        println!("{:?}", bytes);
+
+        assert_eq!(base58str, &bytes_to_str_base58(&bytes[..], count_leading_1),);
+
+        Ok(())
+    }
 }
 
 /*/// Create an array of 64bytes from a Base58 string.

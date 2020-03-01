@@ -38,7 +38,7 @@ impl AsRef<[u8]> for Seed32 {
 
 impl ToBase58 for Seed32 {
     fn to_base58(&self) -> String {
-        bytes_to_str_base58(&self.0[..])
+        bytes_to_str_base58(&self.0[..], 0)
     }
 }
 
