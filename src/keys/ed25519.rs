@@ -43,11 +43,9 @@ use unwrap::unwrap;
 use zeroize::Zeroize;
 
 /// Maximal size of a public key in bytes
-pub static PUBKEY_SIZE_IN_BYTES: &usize = &32;
-/// Minimal size of a public key in bytes
-pub static PUBKEY_MIN_SIZE_IN_BYTES: &usize = &31;
-/// Size of a signature in bytes
-pub static SIG_SIZE_IN_BYTES: &usize = &64;
+pub const PUBKEY_SIZE_IN_BYTES: usize = 32;
+/// constf a signature in bytes
+pub const SIG_SIZE_IN_BYTES: usize = 64;
 
 /// Store a ed25519 signature.
 #[derive(Clone, Copy)]
@@ -167,7 +165,7 @@ impl Default for PublicKey {
     fn default() -> Self {
         PublicKey {
             datas: [0u8; 32],
-            len: 32,
+            len: 0,
         }
     }
 }
@@ -182,9 +180,9 @@ impl TryFrom<&[u8]> for PublicKey {
     type Error = PubkeyFromBytesError;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        if bytes.len() > *PUBKEY_SIZE_IN_BYTES || bytes.len() < *PUBKEY_MIN_SIZE_IN_BYTES {
+        if bytes.len() > PUBKEY_SIZE_IN_BYTES {
             Err(PubkeyFromBytesError::InvalidBytesLen {
-                expected: *PUBKEY_SIZE_IN_BYTES,
+                expected: PUBKEY_SIZE_IN_BYTES,
                 found: bytes.len(),
             })
         } else {
@@ -223,14 +221,7 @@ impl super::PublicKey for PublicKey {
     #[inline]
     fn from_base58(base58_data: &str) -> Result<Self, BaseConvertionError> {
         let (datas, len) = b58::str_base58_to_32bytes(base58_data)?;
-        if len < *PUBKEY_MIN_SIZE_IN_BYTES {
-            Err(BaseConvertionError::InvalidLength {
-                expected: *PUBKEY_SIZE_IN_BYTES,
-                found: len,
-            })
-        } else {
-            Ok(PublicKey { datas, len })
-        }
+        Ok(PublicKey { datas, len })
     }
 
     fn to_bytes_vector(&self) -> Vec<u8> {
@@ -490,6 +481,12 @@ mod tests {
     }
 
     #[test]
+    fn test_pubkey_111_from_base58() {
+        let public58 = "11111111111111111111111111111111111111111111";
+        let _ = unwrap!(super::PublicKey::from_base58(public58));
+    }
+
+    #[test]
     fn base58_public_key() {
         let public58 = "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV";
         let public_key = unwrap!(super::PublicKey::from_base58(public58));
@@ -578,7 +575,7 @@ mod tests {
 
         // Test signature serialization/deserialization
         let mut bin_sig = bincode::serialize(&signature).expect("Fail to serialize signature !");
-        assert_eq!(*SIG_SIZE_IN_BYTES, bin_sig.len());
+        assert_eq!(SIG_SIZE_IN_BYTES, bin_sig.len());
         assert_eq!(signature.to_bytes_vector(), bin_sig);
         assert_eq!(
             signature,
