@@ -507,10 +507,11 @@ mod tests {
 
     #[test]
     fn pubkey() {
-        let pubkey_default = PubKey::default();
-        let pubkey_bytes = [];
-        let pubkey = PubKey::Ed25519(unwrap!(ed25519::PublicKey::try_from(&pubkey_bytes[..])));
-        assert_eq!(pubkey_default, pubkey);
+        let ed25519_pubkey_default = ed25519::PublicKey::default();
+        let pubkey_default = PubKey::Ed25519(ed25519_pubkey_default);
+        let pubkey = PubKey::Ed25519(unwrap!(ed25519::PublicKey::try_from(
+            ed25519_pubkey_default.as_ref()
+        )));
 
         let pubkey_str_b58 = "11111111111111111111111111111111".to_owned();
         assert_eq!(
@@ -519,14 +520,14 @@ mod tests {
         );
 
         assert_eq!(pubkey.size_in_bytes(), ed25519::PUBKEY_SIZE_IN_BYTES + 3);
-        assert_eq!("", &format!("{}", pubkey));
+        assert_eq!("1111111111111111111111111111111", &format!("{}", pubkey));
 
         assert_eq!(KeysAlgo::Ed25519, pubkey.algo());
         assert_eq!(KeysAlgo::Schnorr, PubKey::Schnorr().algo());
 
-        assert_eq!(pubkey_bytes.to_vec(), pubkey.to_bytes_vector());
+        assert_eq!([0u8; 32].to_vec(), pubkey.to_bytes_vector());
 
-        assert_eq!("", &pubkey.to_base58());
+        assert_eq!("1111111111111111111111111111111", &pubkey.to_base58());
 
         assert_eq!(
             Err(SigError::InvalidSig),
@@ -548,7 +549,7 @@ mod tests {
             0u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0,
         ];
-        let seed_str_b58 = "11111111111111111111111111111111".to_owned();
+        let seed_str_b58 = "1111111111111111111111111111111".to_owned();
         let seed = Seed32::new(seed_bytes);
 
         assert_eq!(seed_default, seed);
@@ -557,7 +558,7 @@ mod tests {
             Seed32::from_base58(&seed_str_b58).expect("Fail to parse seed !")
         );
 
-        assert_eq!(seed_str_b58, format!("{}", seed));
+        assert_eq!("1111111111111111111111111111111", format!("{}", seed));
 
         assert_eq!(seed_str_b58, seed.to_base58());
     }
@@ -725,10 +726,6 @@ mod tests {
                 0u8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
                 23, 24, 25, 26, 27, 28, 29, 30, 31, 31
             ]),
-        );
-        assert_eq!(
-            Ok(PubKey::Ed25519(ed25519::PublicKey::default())),
-            PubKey::from_bytes(&[]),
         );
     }
 }

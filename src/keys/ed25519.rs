@@ -158,21 +158,21 @@ impl Eq for Signature {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct PublicKey {
     datas: [u8; 32],
-    len: usize,
+    count_leading_zero: usize,
 }
 
 impl Default for PublicKey {
     fn default() -> Self {
         PublicKey {
             datas: [0u8; 32],
-            len: 0,
+            count_leading_zero: 32,
         }
     }
 }
 
 impl AsRef<[u8]> for PublicKey {
     fn as_ref(&self) -> &[u8] {
-        &self.datas[..self.len]
+        &self.datas[..]
     }
 }
 
@@ -186,11 +186,11 @@ impl TryFrom<&[u8]> for PublicKey {
                 found: bytes.len(),
             })
         } else {
-            let mut u8_array = [0; 32];
-            u8_array[..bytes.len()].copy_from_slice(&bytes);
+            let mut u8_array = [0; PUBKEY_SIZE_IN_BYTES];
+            u8_array[(PUBKEY_SIZE_IN_BYTES - bytes.len())..].copy_from_slice(&bytes);
             Ok(PublicKey {
                 datas: u8_array,
-                len: bytes.len(),
+                count_leading_zero: 0,
             })
         }
     }
@@ -198,13 +198,17 @@ impl TryFrom<&[u8]> for PublicKey {
 
 impl ToBase58 for PublicKey {
     fn to_base58(&self) -> String {
-        bytes_to_str_base58(self.as_ref())
+        bytes_to_str_base58(self.as_ref(), self.count_leading_zero)
     }
 }
 
 impl Display for PublicKey {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}", bytes_to_str_base58(self.as_ref()))
+        write!(
+            f,
+            "{}",
+            bytes_to_str_base58(self.as_ref(), self.count_leading_zero)
+        )
     }
 }
 
@@ -220,8 +224,11 @@ impl super::PublicKey for PublicKey {
 
     #[inline]
     fn from_base58(base58_data: &str) -> Result<Self, BaseConvertionError> {
-        let (datas, len) = b58::str_base58_to_32bytes(base58_data)?;
-        Ok(PublicKey { datas, len })
+        let (datas, count_leading_zero) = b58::str_base58_to_32bytes(base58_data)?;
+        Ok(PublicKey {
+            datas,
+            count_leading_zero,
+        })
     }
 
     fn to_bytes_vector(&self) -> Vec<u8> {
@@ -441,13 +448,6 @@ mod tests {
         assert!(!seed.eq(&other_seed));
 
         // Test seed parsing
-        assert_eq!(
-            Seed32::from_base58("DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLVgth",).unwrap_err(),
-            BaseConvertionError::InvalidLength {
-                found: 35,
-                expected: 32
-            }
-        );
         /*assert_eq!(
             Seed32::from_base58("DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQd",).unwrap_err(),
             BaseConvertionError::InvalidLength {
@@ -460,22 +460,6 @@ mod tests {
             BaseConvertionError::InvalidCharacter {
                 character: '<',
                 offset: 42
-            }
-        );
-        assert_eq!(
-            Seed32::from_base58(
-                "\
-                 DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV\
-                 DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV\
-                 DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV\
-                 DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV\
-                 DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV\
-                 "
-            )
-            .unwrap_err(),
-            BaseConvertionError::InvalidLength {
-                expected: 32,
-                found: 161
             }
         );
     }
@@ -519,22 +503,6 @@ mod tests {
             BaseConvertionError::InvalidCharacter {
                 character: '<',
                 offset: 42
-            }
-        );
-        assert_eq!(
-            super::PublicKey::from_base58(
-                "\
-                 DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV\
-                 DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV\
-                 DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV\
-                 DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV\
-                 DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV\
-                 "
-            )
-            .unwrap_err(),
-            BaseConvertionError::InvalidLength {
-                expected: 32,
-                found: 161
             }
         );
     }
