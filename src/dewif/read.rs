@@ -17,7 +17,7 @@
 
 use super::{Currency, ExpectedCurrency};
 use crate::keys::ed25519::{KeyPairFromSeed32Generator, PublicKey, PUBKEY_SIZE_IN_BYTES};
-use crate::keys::KeyPairEnum;
+use crate::keys::{KeyPair, KeyPairEnum};
 use crate::seeds::Seed32;
 use arrayvec::ArrayVec;
 use byteorder::ByteOrder;
@@ -145,7 +145,7 @@ fn bytes_to_checked_keypair(bytes: &[u8]) -> Result<KeyPairEnum, DewifReadError>
     let keypair = KeyPairFromSeed32Generator::generate(seed);
 
     // Check pubkey
-    if keypair.pubkey() != expected_pubkey {
+    if keypair.public_key() != expected_pubkey {
         Err(DewifReadError::CorruptedContent)
     } else {
         Ok(KeyPairEnum::Ed25519(keypair))

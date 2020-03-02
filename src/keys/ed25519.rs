@@ -282,10 +282,6 @@ impl Ed25519KeyPair {
     pub fn generate_random() -> Result<Self, UnspecifiedRandError> {
         Ok(KeyPairFromSeed32Generator::generate(Seed32::random()?))
     }
-    /// Get public key
-    pub fn pubkey(&self) -> PublicKey {
-        self.pubkey
-    }
     pub(crate) fn seed(&self) -> &Seed32 {
         &self.seed
     }

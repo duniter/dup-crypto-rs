@@ -130,7 +130,7 @@ mod tests {
 
         let mut bin_signable_datas = BinSignableTestImpl {
             datas: vec![0, 1, 2, 3],
-            issuer: PubKey::Ed25519(key_pair.pubkey()),
+            issuer: PubKey::Ed25519(key_pair.public_key()),
             sig: None,
         };
 
