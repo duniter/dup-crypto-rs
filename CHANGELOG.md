@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+- base58: handle base58 string with too many leading zeros (Especially the string `11111111111111111111111111111111111111111111`).
+
 ## [0.12.0] - 2020-03-02
 
 ### Fixed

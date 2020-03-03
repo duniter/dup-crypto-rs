@@ -58,17 +58,20 @@ pub fn str_base58_to_32bytes(base58_data: &str) -> Result<([u8; 32], usize), Bas
 }
 
 /// Create a Base58 string from a slice of bytes.
-pub fn bytes_to_str_base58(bytes: &[u8], mut count_leading_1: usize) -> String {
+pub fn bytes_to_str_base58(bytes: &[u8], count_leading_1: usize) -> String {
     let mut str_base58 = String::new();
-    let bytes = &bytes[count_leading_1..];
+    let mut remaining_leading_1 = count_leading_1;
+    while remaining_leading_1 > 0 {
+        remaining_leading_1 -= 1;
+        str_base58.push('1');
+    }
+    if count_leading_1 >= 32 {
+        return str_base58;
+    }
 
     let bytes = if count_leading_1 == 0 && !bytes.is_empty() && bytes[0] == 0 {
         &bytes[1..]
     } else {
-        while count_leading_1 > 0 {
-            count_leading_1 -= 1;
-            str_base58.push('1');
-        }
         &bytes[count_leading_1..]
     };
 
@@ -83,7 +86,33 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_base_58_str_with_only_1() -> Result<(), BaseConvertionError> {
+        let base58str = "11111111111111111111111111111111111111111111";
+
+        let (bytes, count_leading_1) = str_base58_to_32bytes(base58str)?;
+
+        println!("{:?}", bytes);
+
+        assert_eq!(base58str, &bytes_to_str_base58(&bytes[..], count_leading_1),);
+
+        Ok(())
+    }
+
+    #[test]
     fn test_base_58_str_with_leading_1() -> Result<(), BaseConvertionError> {
+        let base58str = "13fn6X3XWVgshHTgS8beZMo9XiyScx6MB6yPsBB5ZBia";
+
+        let (bytes, count_leading_1) = str_base58_to_32bytes(base58str)?;
+
+        println!("{:?}", bytes);
+
+        assert_eq!(base58str, &bytes_to_str_base58(&bytes[..], count_leading_1),);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_other_base_58_str_with_leading_1() -> Result<(), BaseConvertionError> {
         let base58str = "1V27SH9TiVEDs8TWFPydpRKxhvZari7wjGwQnPxMnkr";
 
         let (bytes, count_leading_1) = str_base58_to_32bytes(base58str)?;
