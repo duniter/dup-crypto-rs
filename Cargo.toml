@@ -39,10 +39,11 @@ harness = false
 required-features = ["criterion"]
 
 [features]
-default = ["dewif", "rand", "ser"]
+default = ["dewif", "private_message", "rand", "ser"]
 
 aes256 = ["aes"]
 dewif = ["aes256", "arrayvec"]
 x25519 = []
+private_message = ["arrayvec", "x25519", "rand"]
 rand = []
 ser = ["serde"]

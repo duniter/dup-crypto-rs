@@ -719,6 +719,7 @@ Timestamp: 0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
         pubkey_bytes.copy_from_slice(&bytes[32..64]);
 
         let keypair = KeyPairFromSeed32Generator::generate(Seed32::new(seed));
+        println!("seed={}", keypair.seed());
         assert_eq!(
             "8hgzaeFnjkNCsemcaL4rmhB2999B79BydtE8xow4etB7",
             &keypair.public_key().to_base58()

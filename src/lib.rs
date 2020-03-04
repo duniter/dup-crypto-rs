@@ -26,6 +26,9 @@
 //!   * [Compute Sha256 hash](./hashs/index.html#compute-sha256-hash)
 //! * [Ed25519](./keys/index.html)
 //!   * [generate and use ed25519 key-pair](./keys/index.html#generate-and-use-ed25519-key-pair)
+//! * [Private message encryption with authentification](./private_message/index.html)
+//!   * [Encrypt a private message (sender side)](./private_message/index.html#encrypt-a-private-message-sender-side)
+//!   * [Decrypt a private message (receiver side)](./private_message/index.html#decrypt-a-private-message-receiver-side)
 //!
 
 #![deny(
@@ -48,6 +51,8 @@ pub mod bases;
 pub mod dewif;
 pub mod hashs;
 pub mod keys;
+#[cfg(feature = "private_message")]
+pub mod private_message;
 #[cfg(feature = "rand")]
 pub mod rand;
 pub mod seeds;
