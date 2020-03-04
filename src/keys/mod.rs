@@ -52,6 +52,8 @@
 pub mod bin_signable;
 pub mod ed25519;
 pub mod text_signable;
+#[cfg(feature = "x25519")]
+pub(crate) mod x25519;
 
 pub use crate::seeds::Seed32;
 

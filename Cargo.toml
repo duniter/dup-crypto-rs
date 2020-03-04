@@ -43,5 +43,6 @@ default = ["dewif", "rand", "ser"]
 
 aes256 = ["aes"]
 dewif = ["aes256", "arrayvec"]
+x25519 = []
 rand = []
 ser = ["serde"]
