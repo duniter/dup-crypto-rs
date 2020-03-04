@@ -25,14 +25,17 @@ thiserror = "1.0.11"
 unwrap = "1.2.1"
 zeroize = { version = "1.1.0", features = ["zeroize_derive"] }
 
+# Benches dependencies
+criterion = { version = "0.3.1", optional = true }
+
 [dev-dependencies]
 bincode = "1.2.0"
-criterion = "0.3.1"
 sodiumoxide = "0.2.5"
 
 [[bench]]
 name = "ring_vs_sodium"
 harness = false
+required-features = ["criterion"]
 
 [features]
 default = ["dewif", "rand", "ser"]
