@@ -251,6 +251,8 @@ pub enum PubkeyFromBytesError {
         /// Found length
         found: usize,
     },
+    /// Invalid bytes content
+    InvalidBytesContent,
 }
 
 impl PubKey {

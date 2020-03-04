@@ -27,6 +27,7 @@ use crate::bases::*;
 use crate::rand::UnspecifiedRandError;
 use crate::seeds::Seed32;
 use base64;
+use curve25519_dalek::edwards::CompressedEdwardsY;
 use ring::signature::{Ed25519KeyPair as RingKeyPair, KeyPair, UnparsedPublicKey, ED25519};
 #[cfg(feature = "ser")]
 use serde::{
@@ -73,6 +74,7 @@ impl Serialize for Signature {
 }
 
 #[cfg(feature = "ser")]
+#[cfg_attr(tarpaulin, skip)]
 impl<'de> Deserialize<'de> for Signature {
     fn deserialize<D>(deserializer: D) -> Result<Signature, D::Error>
     where
@@ -187,12 +189,19 @@ impl TryFrom<&[u8]> for PublicKey {
                 found: bytes.len(),
             })
         } else {
-            let mut u8_array = [0; PUBKEY_SIZE_IN_BYTES];
-            u8_array[(PUBKEY_SIZE_IN_BYTES - bytes.len())..].copy_from_slice(&bytes);
-            Ok(PublicKey {
-                datas: u8_array,
-                count_leading_zero: 0,
-            })
+            // Ensure that given bytes represents a valid point on the Edwards form of Curve25519.
+            let compressed_edwards_y = CompressedEdwardsY::from_slice(bytes);
+            if compressed_edwards_y.decompress().is_some() {
+                let mut u8_array = [0; PUBKEY_SIZE_IN_BYTES];
+                u8_array[(PUBKEY_SIZE_IN_BYTES - bytes.len())..].copy_from_slice(bytes);
+
+                Ok(PublicKey {
+                    datas: u8_array,
+                    count_leading_zero: 0,
+                })
+            } else {
+                Err(PubkeyFromBytesError::InvalidBytesContent)
+            }
         }
     }
 }
@@ -682,6 +691,42 @@ Timestamp: 0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
 
         let sig = keypair.generate_signator().sign(message.as_bytes());
         assert!(keypair.verify(message.as_bytes(), &sig).is_ok());
+    }
+
+    #[test]
+    fn invalid_pubkey() -> Result<(), ()> {
+        let invalid_bytes = [
+            206u8, 58, 67, 221, 20, 133, 0, 225, 86, 115, 26, 104, 142, 116, 140, 132, 119, 51,
+            175, 45, 82, 225, 14, 195, 7, 107, 43, 212, 8, 37, 234, 23,
+        ];
+        if let Err(PubkeyFromBytesError::InvalidBytesContent) =
+            PublicKey::try_from(&invalid_bytes[..])
+        {
+            Ok(())
+        } else {
+            panic!("expected PubkeyFromBytesError::InvalidBytesContent");
+        }
+    }
+
+    #[test]
+    fn test_parse_expanded_base58_private_key() {
+        let bytes = bs58::decode(
+            "31uSnvigJtJEUgG4YDqJB99awp4hkYgYqb3Yzu8P1LP5ZPMHtwNoCohVhm6jKcG9HFHbagDWdcoPgYBgHhdg5Efo"
+        ).into_vec().expect("fail to decode b58");
+        let mut seed = [0u8; 32];
+        seed.copy_from_slice(&bytes[..32]);
+        let mut pubkey_bytes = [0u8; 32];
+        pubkey_bytes.copy_from_slice(&bytes[32..64]);
+
+        let keypair = KeyPairFromSeed32Generator::generate(Seed32::new(seed));
+        assert_eq!(
+            "8hgzaeFnjkNCsemcaL4rmhB2999B79BydtE8xow4etB7",
+            &keypair.public_key().to_base58()
+        );
+        assert_eq!(
+            "8hgzaeFnjkNCsemcaL4rmhB2999B79BydtE8xow4etB7",
+            &bs58::encode(&pubkey_bytes).into_string(),
+        );
     }
 
     /*#[test]
