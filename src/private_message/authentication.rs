@@ -114,7 +114,7 @@ pub(crate) fn verify_authentication_proof(
     receiver_key_pair: &Ed25519KeyPair,
     message: &[u8],
     authentication_datas: &[u8],
-) -> Result<Option<Signature>, PrivateMessageError> {
+) -> Result<(Ed25519PublicKey, Option<Signature>), PrivateMessageError> {
     let sender_public_key =
         Ed25519PublicKey::try_from(&authentication_datas[..SENDER_PUBLIC_KEY_LEN])
             .map_err(PrivateMessageError::InvalidSenderPubkey)?;
@@ -151,7 +151,7 @@ pub(crate) fn verify_authentication_proof(
                 .map_err(|_| PrivateMessageError::InvalidAuthenticationProof)?;
         }
     }
-    Ok(signature_opt)
+    Ok((sender_public_key, signature_opt))
 }
 
 #[cfg(test)]

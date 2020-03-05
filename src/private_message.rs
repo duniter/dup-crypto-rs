@@ -83,7 +83,7 @@
 //!
 //! ```
 //! use dup_crypto::keys::{KeyPair, ed25519::KeyPairFromSeed32Generator};
-//! use dup_crypto::private_message::{Aad, Algorithm};
+//! use dup_crypto::private_message::{Aad, Algorithm, DecryptedMessage};
 //! use dup_crypto::seeds::Seed32;
 //!
 //! let receiver_key_pair = KeyPairFromSeed32Generator::generate(
@@ -103,17 +103,22 @@
 //! # 247, 151, 148, 197, 162, 88, 254, 185, 149, 108, 2, 137, 139, 66, 82, 168, 213, 118, 218, 188, 238,
 //! # 147, 89, 156];
 //!
-//! let (message, signature_opt) = dup_crypto::private_message::decrypt_private_message(
-//!     Aad::from(b"service name - currency name"),
-//!     Algorithm::Chacha20Poly1305,
-//!     &mut encrypted_message,
-//!     &receiver_key_pair,
+//! let DecryptedMessage { message, sender_public_key, signature_opt } =
+//!     dup_crypto::private_message::decrypt_private_message(
+//!         Aad::from(b"service name - currency name"),
+//!         Algorithm::Chacha20Poly1305,
+//!         &mut encrypted_message,
+//!         &receiver_key_pair,
 //! )?;
 //!
 //! assert_eq!(
 //!     message,
 //!     &b"This is a secret message, which can only be read by the recipient."[..],
 //! );
+//! assert_eq!{
+//!     "4HbjoXtWu9C2Q5LMu1RcWHS66k4dnvHspBxKWagFG5rJ",
+//!     &sender_public_key.to_string(),
+//! }
 //! assert_eq!(
 //!     signature_opt,
 //!     None
@@ -289,6 +294,16 @@ where
     Ok(())
 }
 
+/// Decrypted message
+pub struct DecryptedMessage<'m> {
+    /// decrypted message content
+    pub message: &'m [u8],
+    /// Sender public key
+    pub sender_public_key: Ed25519PublicKey,
+    /// Optional signature
+    pub signature_opt: Option<Signature>,
+}
+
 /// Decrypt private message.
 /// Return a reference to decrypted bytes and an optional signature.
 /// If the authentication method chosen by the sender is `Signature`,
@@ -299,7 +314,7 @@ pub fn decrypt_private_message<'m, A: AsRef<[u8]>>(
     algorithm: Algorithm,
     encrypted_message: &'m mut [u8],
     receiver_key_pair: &Ed25519KeyPair,
-) -> Result<(&'m [u8], Option<Signature>), PrivateMessageError> {
+) -> Result<DecryptedMessage<'m>, PrivateMessageError> {
     // Get ephemeral public key
     let len = encrypted_message.len();
     let ephemeral_public_key = &encrypted_message[(len - EPHEMERAL_PUBLIC_KEY_LEN)..];
@@ -326,13 +341,17 @@ pub fn decrypt_private_message<'m, A: AsRef<[u8]>>(
     let tag_len = algorithm.to_ring_algo().tag_len();
     let authent_end = len - EPHEMERAL_PUBLIC_KEY_LEN - tag_len;
     let authent_begin = authent_end - AUTHENTICATION_DATAS_LEN;
-    let sig_opt = verify_authentication_proof(
+    let (sender_public_key, sig_opt) = verify_authentication_proof(
         receiver_key_pair,
         &encrypted_message[..authent_begin],
         &encrypted_message[authent_begin..authent_end],
     )?;
 
-    Ok((&encrypted_message[..authent_begin], sig_opt))
+    Ok(DecryptedMessage {
+        message: &encrypted_message[..authent_begin],
+        sender_public_key,
+        signature_opt: sig_opt,
+    })
 }
 
 fn generate_symmetric_key_and_nonce(
@@ -483,7 +502,11 @@ mod tests {
 
         println!("encrypted message={:?}", encrypted_message);
 
-        let (decrypted_message, sig_opt) = decrypt_private_message(
+        let DecryptedMessage {
+            message: decrypted_message,
+            sender_public_key,
+            signature_opt,
+        } = decrypt_private_message(
             Aad::from(AAD),
             Algorithm::Chacha20Poly1305,
             &mut encrypted_message,
@@ -493,7 +516,8 @@ mod tests {
         println!("decrypted message={:?}", decrypted_message);
 
         assert_eq!(decrypted_message, message);
-        assert_eq!(sig_opt, None);
+        assert_eq!(sender_public_key, sender_key_pair.public_key());
+        assert_eq!(signature_opt, None);
 
         Ok(())
     }
