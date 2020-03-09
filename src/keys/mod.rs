@@ -506,7 +506,7 @@ mod tests {
     }
 
     #[test]
-    fn pubkey() {
+    fn public_key() {
         let ed25519_pubkey_default = ed25519::PublicKey::default();
         let pubkey_default = PubKey::Ed25519(ed25519_pubkey_default);
         let pubkey = PubKey::Ed25519(unwrap!(ed25519::PublicKey::try_from(
@@ -520,14 +520,16 @@ mod tests {
         );
 
         assert_eq!(pubkey.size_in_bytes(), ed25519::PUBKEY_SIZE_IN_BYTES + 3);
-        assert_eq!("1111111111111111111111111111111", &format!("{}", pubkey));
+        assert_eq!("11111111111111111111111111111111", &format!("{}", pubkey));
 
         assert_eq!(KeysAlgo::Ed25519, pubkey.algo());
         assert_eq!(KeysAlgo::Schnorr, PubKey::Schnorr().algo());
 
-        assert_eq!([0u8; 32].to_vec(), pubkey.to_bytes_vector());
+        let mut expected_vec = [0u8; 32].to_vec();
+        expected_vec.push(32);
+        assert_eq!(expected_vec, pubkey.to_bytes_vector());
 
-        assert_eq!("1111111111111111111111111111111", &pubkey.to_base58());
+        assert_eq!("11111111111111111111111111111111", &pubkey.to_base58());
 
         assert_eq!(
             Err(SigError::InvalidSig),
@@ -720,11 +722,11 @@ mod tests {
         assert_eq!(
             Err(PubkeyFromBytesError::InvalidBytesLen {
                 expected: ed25519::PUBKEY_SIZE_IN_BYTES,
-                found: 33,
+                found: 34,
             }),
             PubKey::from_bytes(&[
                 0u8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-                23, 24, 25, 26, 27, 28, 29, 30, 31, 31
+                23, 24, 25, 26, 27, 28, 29, 30, 31, 31, 17
             ]),
         );
     }

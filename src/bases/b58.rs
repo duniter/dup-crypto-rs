@@ -24,7 +24,7 @@ pub trait ToBase58 {
 }
 
 /// Create an array of 32 bytes from a Base58 string.
-pub fn str_base58_to_32bytes(base58_data: &str) -> Result<([u8; 32], usize), BaseConvertionError> {
+pub fn str_base58_to_32bytes(base58_data: &str) -> Result<([u8; 32], u8), BaseConvertionError> {
     let mut source = base58_data;
     let mut count_leading_1 = 0;
     while !source.is_empty() && &source[0..1] == "1" {
@@ -58,7 +58,7 @@ pub fn str_base58_to_32bytes(base58_data: &str) -> Result<([u8; 32], usize), Bas
 }
 
 /// Create a Base58 string from a slice of bytes.
-pub fn bytes_to_str_base58(bytes: &[u8], count_leading_1: usize) -> String {
+pub fn bytes_to_str_base58(bytes: &[u8], count_leading_1: u8) -> String {
     let mut str_base58 = String::new();
     let mut remaining_leading_1 = count_leading_1;
     while remaining_leading_1 > 0 {
@@ -72,7 +72,7 @@ pub fn bytes_to_str_base58(bytes: &[u8], count_leading_1: usize) -> String {
     let bytes = if count_leading_1 == 0 && !bytes.is_empty() && bytes[0] == 0 {
         &bytes[1..]
     } else {
-        &bytes[count_leading_1..]
+        &bytes[count_leading_1 as usize..]
     };
 
     str_base58.push_str(&bs58::encode(bytes).into_string());
