@@ -32,7 +32,7 @@ pub fn write_dewif_v1_content(
     let currency_code: u32 = currency.into();
     unwrap!(bytes.try_extend_from_slice(&currency_code.to_be_bytes()));
     unwrap!(bytes.try_extend_from_slice(keypair.seed().as_ref()));
-    unwrap!(bytes.try_extend_from_slice(keypair.public_key().as_ref()));
+    unwrap!(bytes.try_extend_from_slice(keypair.public_key().datas.as_ref()));
 
     let cipher = crate::aes256::new_cipher(super::gen_aes_seed(passphrase));
     crate::aes256::encrypt::encrypt_n_blocks(
@@ -56,9 +56,9 @@ pub fn write_dewif_v2_content(
     let currency_code: u32 = currency.into();
     unwrap!(bytes.try_extend_from_slice(&currency_code.to_be_bytes()));
     unwrap!(bytes.try_extend_from_slice(keypair1.seed().as_ref()));
-    unwrap!(bytes.try_extend_from_slice(keypair1.public_key().as_ref()));
+    unwrap!(bytes.try_extend_from_slice(keypair1.public_key().datas.as_ref()));
     unwrap!(bytes.try_extend_from_slice(keypair2.seed().as_ref()));
-    unwrap!(bytes.try_extend_from_slice(keypair2.public_key().as_ref()));
+    unwrap!(bytes.try_extend_from_slice(keypair2.public_key().datas.as_ref()));
 
     let cipher = crate::aes256::new_cipher(super::gen_aes_seed(passphrase));
     crate::aes256::encrypt::encrypt_8_blocks(&cipher, &mut bytes[super::UNENCRYPTED_BYTES_LEN..]);

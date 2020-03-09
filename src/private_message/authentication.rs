@@ -75,7 +75,7 @@ pub(crate) fn write_anthentication_datas(
 ) -> impl AsRef<[u8]> + IntoIterator<Item = u8> {
     let mut authent_datas = arrayvec::ArrayVec::<[u8; 128]>::new();
     authent_datas
-        .try_extend_from_slice(sender_public_key.as_ref())
+        .try_extend_from_slice(sender_public_key.datas.as_ref())
         .expect("too long sender public key");
     authent_datas
         .try_extend_from_slice(authent_proof.as_ref())

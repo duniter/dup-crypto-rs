@@ -31,7 +31,8 @@ pub(crate) struct X25519PublicKey(MontgomeryPoint);
 
 impl From<&PublicKey> for X25519PublicKey {
     fn from(ed25519_public_key: &PublicKey) -> Self {
-        let compressed_edwards_y = CompressedEdwardsY::from_slice(ed25519_public_key.as_ref());
+        let compressed_edwards_y =
+            CompressedEdwardsY::from_slice(ed25519_public_key.datas.as_ref());
         let edwards_point = compressed_edwards_y
             .decompress()
             .expect("dev error: invalid ed25519 public key");

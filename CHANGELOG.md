@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+- keys: ed25519 public key methods (as_ref, try_from, to_bytes_vector) must be consistent with bincode serialization/deserialization
+
 ## [0.13.0] - 2020-03-04
 
 ### Added

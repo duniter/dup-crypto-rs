@@ -44,8 +44,9 @@ use std::marker::PhantomData;
 use unwrap::unwrap;
 use zeroize::Zeroize;
 
-/// Maximal size of a public key in bytes
-pub const PUBKEY_SIZE_IN_BYTES: usize = 32;
+/// Size of a public key in bytes
+pub const PUBKEY_SIZE_IN_BYTES: usize = 33;
+pub(crate) const PUBKEY_DATAS_SIZE_IN_BYTES: usize = 32;
 /// constf a signature in bytes
 pub const SIG_SIZE_IN_BYTES: usize = 64;
 
@@ -160,8 +161,8 @@ impl Eq for Signature {}
 #[cfg_attr(feature = "ser", derive(Deserialize, Serialize))]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct PublicKey {
-    datas: [u8; 32],
-    count_leading_zero: usize,
+    pub(crate) datas: [u8; 32],
+    count_leading_zero: u8,
 }
 
 impl Default for PublicKey {
@@ -175,7 +176,7 @@ impl Default for PublicKey {
 
 impl AsRef<[u8]> for PublicKey {
     fn as_ref(&self) -> &[u8] {
-        &self.datas[..]
+        unsafe { std::slice::from_raw_parts(self.datas.as_ptr(), PUBKEY_SIZE_IN_BYTES) }
     }
 }
 
@@ -189,15 +190,24 @@ impl TryFrom<&[u8]> for PublicKey {
                 found: bytes.len(),
             })
         } else {
+            let (count_leading_zero, datas_bytes) = if bytes.len() <= PUBKEY_DATAS_SIZE_IN_BYTES {
+                (0, bytes)
+            } else {
+                (
+                    bytes[PUBKEY_DATAS_SIZE_IN_BYTES],
+                    &bytes[..PUBKEY_DATAS_SIZE_IN_BYTES],
+                )
+            };
             // Ensure that given bytes represents a valid point on the Edwards form of Curve25519.
-            let compressed_edwards_y = CompressedEdwardsY::from_slice(bytes);
+            let compressed_edwards_y = CompressedEdwardsY::from_slice(datas_bytes);
             if compressed_edwards_y.decompress().is_some() {
-                let mut u8_array = [0; PUBKEY_SIZE_IN_BYTES];
-                u8_array[(PUBKEY_SIZE_IN_BYTES - bytes.len())..].copy_from_slice(bytes);
+                let mut u8_array = [0; PUBKEY_DATAS_SIZE_IN_BYTES];
+                u8_array[(PUBKEY_DATAS_SIZE_IN_BYTES - datas_bytes.len())..]
+                    .copy_from_slice(datas_bytes);
 
                 Ok(PublicKey {
                     datas: u8_array,
-                    count_leading_zero: 0,
+                    count_leading_zero,
                 })
             } else {
                 Err(PubkeyFromBytesError::InvalidBytesContent)
@@ -208,7 +218,7 @@ impl TryFrom<&[u8]> for PublicKey {
 
 impl ToBase58 for PublicKey {
     fn to_base58(&self) -> String {
-        bytes_to_str_base58(self.as_ref(), self.count_leading_zero)
+        bytes_to_str_base58(self.datas.as_ref(), self.count_leading_zero)
     }
 }
 
@@ -217,7 +227,7 @@ impl Display for PublicKey {
         write!(
             f,
             "{}",
-            bytes_to_str_base58(self.as_ref(), self.count_leading_zero)
+            bytes_to_str_base58(self.datas.as_ref(), self.count_leading_zero)
         )
     }
 }
@@ -246,7 +256,7 @@ impl super::PublicKey for PublicKey {
     }
 
     fn verify(&self, message: &[u8], signature: &Self::Signature) -> Result<(), SigError> {
-        Ok(UnparsedPublicKey::new(&ED25519, self.as_ref())
+        Ok(UnparsedPublicKey::new(&ED25519, self.datas.as_ref())
             .verify(message, &signature.0)
             .map_err(|_| SigError::InvalidSig)?)
     }
@@ -459,13 +469,6 @@ mod tests {
         assert!(!seed.eq(&other_seed));
 
         // Test seed parsing
-        /*assert_eq!(
-            Seed32::from_base58("DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQd",).unwrap_err(),
-            BaseConvertionError::InvalidLength {
-                found: 31,
-                expected: 32
-            }
-        );*/
         assert_eq!(
             Seed32::from_base58("DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQd<<").unwrap_err(),
             BaseConvertionError::InvalidCharacter {
@@ -476,23 +479,66 @@ mod tests {
     }
 
     #[test]
-    fn test_pubkey_111_from_base58() {
+    fn test_pubkey_111_from_base58() -> Result<(), bincode::Error> {
         let public58 = "11111111111111111111111111111111111111111111";
-        let _ = unwrap!(super::PublicKey::from_base58(public58));
+        let public_key = unwrap!(super::PublicKey::from_base58(public58));
+        assert_eq!(
+            &[
+                0u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 44
+            ][..],
+            public_key.as_ref(),
+        );
+        assert_eq!(
+            bincode::serialize(&public_key)?,
+            public_key.to_bytes_vector(),
+        );
+        Ok(())
     }
 
     #[test]
-    fn base58_public_key() {
+    fn test_pubkey_with_leading_1() -> Result<(), bincode::Error> {
+        let public58 = "13fn6X3XWVgshHTgS8beZMo9XiyScx6MB6yPsBB5ZBia";
+        let public_key = unwrap!(super::PublicKey::from_base58(public58));
+        assert_eq!(
+            bincode::serialize(&public_key)?,
+            public_key.to_bytes_vector(),
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_other_pubkey_with_leading_1() -> Result<(), bincode::Error> {
+        let public58 = "1V27SH9TiVEDs8TWFPydpRKxhvZari7wjGwQnPxMnkr";
+        let public_key = unwrap!(super::PublicKey::from_base58(public58));
+        assert_eq!(
+            bincode::serialize(&public_key)?,
+            public_key.to_bytes_vector(),
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn base58_public_key() -> Result<(), bincode::Error> {
         let public58 = "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV";
         let public_key = unwrap!(super::PublicKey::from_base58(public58));
 
         // Test base58 encoding/decoding (loop for every bytes)
         assert_eq!(public_key.to_base58(), public58);
         let public_raw = unwrap!(b58::str_base58_to_32bytes(public58));
-        assert_eq!(public_raw.0.to_vec(), public_key.to_bytes_vector());
-        for (key, raw) in public_key.as_ref().iter().zip(public_raw.0.iter()) {
+        assert_eq!(
+            public_raw.0.to_vec(),
+            &public_key.to_bytes_vector()[..PUBKEY_DATAS_SIZE_IN_BYTES]
+        );
+        for (key, raw) in public_key.datas.as_ref().iter().zip(public_raw.0.iter()) {
             assert_eq!(key, raw);
         }
+
+        // Test binary encoding/decoding
+        assert_eq!(
+            bincode::serialize(&public_key)?,
+            public_key.to_bytes_vector(),
+        );
 
         // Test pubkey debug
         assert_eq!(
@@ -516,6 +562,7 @@ mod tests {
                 offset: 42
             }
         );
+        Ok(())
     }
 
     #[test]

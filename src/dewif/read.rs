@@ -16,9 +16,9 @@
 //! Read [DEWIF](https://git.duniter.org/nodes/common/doc/blob/dewif/rfc/0013_Duniter_Encrypted_Wallet_Import_Format.md) file content
 
 use super::{Currency, ExpectedCurrency};
-use crate::keys::ed25519::{KeyPairFromSeed32Generator, PublicKey, PUBKEY_SIZE_IN_BYTES};
+use crate::keys::ed25519::{KeyPairFromSeed32Generator, PublicKey, PUBKEY_DATAS_SIZE_IN_BYTES};
 use crate::keys::{KeyPair, KeyPairEnum};
-use crate::seeds::Seed32;
+use crate::seeds::{Seed32, SEED_32_SIZE_IN_BYTES};
 use arrayvec::ArrayVec;
 use byteorder::ByteOrder;
 use std::convert::{TryFrom, TryInto};
@@ -135,11 +135,12 @@ fn read_dewif_v2(bytes: &mut [u8], passphrase: &str) -> Result<KeyPairsIter, Dew
 fn bytes_to_checked_keypair(bytes: &[u8]) -> Result<KeyPairEnum, DewifReadError> {
     // Wrap bytes into Seed32 and PublicKey
     let seed = Seed32::new(
-        (&bytes[..PUBKEY_SIZE_IN_BYTES])
+        (&bytes[..SEED_32_SIZE_IN_BYTES])
             .try_into()
             .expect("dev error"),
     );
-    let expected_pubkey = PublicKey::try_from(&bytes[PUBKEY_SIZE_IN_BYTES..]).expect("dev error");
+    let expected_pubkey =
+        PublicKey::try_from(&bytes[PUBKEY_DATAS_SIZE_IN_BYTES..]).expect("dev error");
 
     // Get keypair
     let keypair = KeyPairFromSeed32Generator::generate(seed);

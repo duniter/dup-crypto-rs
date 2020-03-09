@@ -24,11 +24,14 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{self, Debug, Display, Formatter};
 use zeroize::Zeroize;
 
+/// Seed32 size in bytes
+pub const SEED_32_SIZE_IN_BYTES: usize = 32;
+
 /// Store a 32 bytes seed used to generate keys.
 #[cfg_attr(feature = "ser", derive(Deserialize, Serialize))]
 #[derive(Clone, Default, PartialEq, Eq, Hash, Zeroize)]
 #[zeroize(drop)]
-pub struct Seed32([u8; 32]);
+pub struct Seed32([u8; SEED_32_SIZE_IN_BYTES]);
 
 impl AsRef<[u8]> for Seed32 {
     fn as_ref(&self) -> &[u8] {
@@ -57,7 +60,7 @@ impl Display for Seed32 {
 impl Seed32 {
     #[inline]
     /// Create new seed
-    pub fn new(seed_bytes: [u8; 32]) -> Seed32 {
+    pub fn new(seed_bytes: [u8; SEED_32_SIZE_IN_BYTES]) -> Seed32 {
         Seed32(seed_bytes)
     }
     #[inline]

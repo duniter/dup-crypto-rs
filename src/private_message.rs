@@ -255,7 +255,7 @@ where
     // and derive symmetric_key and nonce from shared secret
     let (symmetric_key, nonce) = generate_symmetric_key_and_nonce(
         algorithm,
-        ephemeral_keypair.public_key().as_ref(),
+        ephemeral_keypair.public_key().datas.as_ref(),
         ephemeral_keypair.seed(),
         &receiver_public_key,
     )?;
@@ -287,7 +287,7 @@ where
         .try_extend_from_slice(tag.as_ref())
         .expect("too long tag");
     clear_footer
-        .try_extend_from_slice(ephemeral_keypair.public_key().as_ref())
+        .try_extend_from_slice(ephemeral_keypair.public_key().datas.as_ref())
         .expect("too long ephemeral_public_key");
     message.extend(clear_footer.into_iter());
 
