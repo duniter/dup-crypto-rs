@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+## [0.14.0] - 2020-04-02
+
 ### Fixed
 
 - keys: ed25519 public key methods (as_ref, try_from, to_bytes_vector) must be consistent with bincode serialization/deserialization
@@ -70,7 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial version.
 
 <!-- next-url -->
-[Unreleased]: https://git.duniter.org/libs/dup-crypto-rs/compare/v0.13.0...HEAD
+[Unreleased]: https://git.duniter.org/libs/dup-crypto-rs/compare/v0.14.0...HEAD
+[0.14.0]: https://git.duniter.org/libs/dup-crypto-rs/compare/v0.13.0...v0.14.0
 [0.13.0]: https://git.duniter.org/libs/dup-crypto-rs/compare/v0.12.1...v0.13.0
 [0.12.1]: https://git.duniter.org/libs/dup-crypto-rs/compare/v0.12.0...v0.12.1
 [0.12.0]: https://git.duniter.org/libs/dup-crypto-rs/compare/v0.11.1...v0.12.0
